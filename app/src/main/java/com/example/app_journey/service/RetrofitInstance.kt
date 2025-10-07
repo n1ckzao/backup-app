@@ -10,4 +10,8 @@ object RetrofitInstance {
         .build()
 
     val usuarioService: UsuarioService = retrofit.create(UsuarioService::class.java)
+
+    val grupoService: GrupoService = retrofit.create(GrupoService::class.java)
+
+
 }

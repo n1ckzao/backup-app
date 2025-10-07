@@ -156,28 +156,14 @@ fun AppContent() {
                 composable("cadastro") { Cadastro(navController) }
                 composable("recuperacao_senha") { RecuperacaoSenha(navController) }
                 composable("home") { Home(navController) }
-                composable("profile") { Perfil(
-                    navController = navController
-                ) }
-
-                // Nova rota para criar grupo
-                composable("criar_grupo") {
-                    CriarGrupo(navegacao = navController)
-                }
-
+                composable("profile") { Perfil(navController) }
+                composable("criar_grupo") { CriarGrupo(navegacao = navController) }
+                composable("meus_grupos") { MeusGrupos(navController) }
 
                 composable("editar_info/{idUsuario}") { backStackEntry ->
                     val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
                     EditarInfoWrapper(navController, idUsuario)
                 }
-
-
-
-
-
-
-
-
 
                 composable("verificar_email/{email}") { backStackEntry ->
                     val email = backStackEntry.arguments?.getString("email")
