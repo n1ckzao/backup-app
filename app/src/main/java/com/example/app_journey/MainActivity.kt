@@ -23,14 +23,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.app_journey.model.Usuario
 import com.example.app_journey.model.UsuarioResult
 import com.example.app_journey.screens.*
 import com.example.app_journey.service.RetrofitInstance
+import com.example.app_journey.ui.theme.PurpleMedium
 import com.example.app_journey.utils.SharedPrefHelper
 import kotlinx.coroutines.launch
 import retrofit2.*
@@ -57,12 +60,15 @@ fun AppContent() {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         val idSalvo = SharedPrefHelper.recuperarIdUsuario(context)
+        Log.d("MainActivity", "ID salvo: $idSalvo")
+
         if (idSalvo != null) {
             try {
-                // Aqui usamos a versão suspend do Retrofit
                 val result = RetrofitInstance.usuarioService.getUsuarioPorIdSuspend(idSalvo)
+                Log.d("MainActivity", "Resposta API: $result")
                 if (!result.usuario.isNullOrEmpty()) {
                     usuarioLogado = result.usuario[0]
+                    Log.d("MainActivity", "Usuário carregado: ${usuarioLogado?.nome_completo}")
                 } else {
                     Log.e("MainActivity", "Usuário não encontrado")
                 }
@@ -74,6 +80,7 @@ fun AppContent() {
         }
         carregandoUsuario = false
     }
+
 
     // Observa a rota atual
     val navBackStackEntry = navController.currentBackStackEntryAsState()
@@ -149,7 +156,9 @@ fun AppContent() {
                 composable("cadastro") { Cadastro(navController) }
                 composable("recuperacao_senha") { RecuperacaoSenha(navController) }
                 composable("home") { Home(navController) }
-                composable("profile") { Perfil(navegacao = navController) }
+                composable("profile") { Perfil(
+                    navController = navController
+                ) }
 
                 // Nova rota para criar grupo
                 composable("criar_grupo") {
@@ -157,31 +166,19 @@ fun AppContent() {
                 }
 
 
-                composable("editar_info") {
-                    if (carregandoUsuario) {
-                        // Mostra loading enquanto busca
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Carregando usuário...")
-                        }
-                    } else {
-                        usuarioLogado?.let { usuario ->
-                            EditarInfo(
-                                navController = navController,
-                                usuarioId = usuario.id_usuario
-                            )
-                        }
-                        } ?: run {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("Não foi possível carregar o usuário")
-                            }
-                        }
-                    }
+                composable("editar_info/{idUsuario}") { backStackEntry ->
+                    val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
+                    EditarInfoWrapper(navController, idUsuario)
+                }
+
+
+
+
+
+
+
+
+
                 composable("verificar_email/{email}") { backStackEntry ->
                     val email = backStackEntry.arguments?.getString("email")
                     email?.let { VerificarEmail(navController, it) }

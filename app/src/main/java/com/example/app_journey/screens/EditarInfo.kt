@@ -1,242 +1,195 @@
 package com.example.app_journey.screens
 
-import android.net.Uri
 import android.util.Log
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import coil.compose.rememberAsyncImagePainter
+import androidx.navigation.NavController
 import com.example.app_journey.model.Usuario
-import com.example.app_journey.model.UsuarioResult
-import com.example.app_journey.service.RetrofitFactory
-import com.example.app_journey.ui.theme.*
-import com.example.app_journey.utils.SharedPrefHelper
+import com.example.app_journey.service.RetrofitInstance
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditarInfo(navegacao: NavHostController) {
-    val usuarioLogado = remember { mutableStateOf<Usuario?>(null) }
-    val loading = remember { mutableStateOf(true) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
-    val context = LocalContext.current
+fun EditarInfo(
+    navController: NavController,
+    usuario: Usuario,
+    onSave: (Usuario) -> Unit
+) {
+    // Estados dos campos do formulário
+    var nome by remember { mutableStateOf(usuario.nome_completo) }
+    var email by remember { mutableStateOf(usuario.email) }
+    var dataNascimento by remember { mutableStateOf(usuario.data_nascimento ?: "") }
+    var fotoPerfil by remember { mutableStateOf(usuario.foto_perfil ?: "") }
+    var descricao by remember { mutableStateOf(usuario.descricao ?: "") }
+    var senha by remember { mutableStateOf(usuario.senha) }
+    var tipoUsuario by remember { mutableStateOf(usuario.tipo_usuario) }
 
-    val idUsuario = SharedPrefHelper.recuperarIdUsuario(context) ?: -1
-
-    LaunchedEffect(idUsuario) {
-        if (idUsuario != -1) {
-            loading.value = true
-            val usuarioService = RetrofitFactory().getUsuarioService()
-            usuarioService.getUsuarioPorId(idUsuario)
-                .enqueue(object : Callback<UsuarioResult> {
-                    override fun onResponse(
-                        call: Call<UsuarioResult>,
-                        response: Response<UsuarioResult>
-                    ) {
-                        loading.value = false
-                        if (response.isSuccessful) {
-                            val result = response.body()
-                            if (result != null && result.usuario != null && result.usuario.isNotEmpty()) {
-                                usuarioLogado.value = result.usuario[0] // pega o primeiro usuário
-                                errorMessage.value = null
-                            } else {
-                                errorMessage.value = "Usuário não encontrado"
-                            }
-                        } else {
-                            errorMessage.value = "Erro ao carregar usuário: ${response.code()}"
-                        }
-                    }
-
-                    override fun onFailure(call: Call<UsuarioResult>, t: Throwable) {
-                        loading.value = false
-                        errorMessage.value = "Erro de rede: ${t.message}"
-                    }
-                })
-        } else {
-            errorMessage.value = "Usuário não logado"
-        }
-    }
-
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(PrimaryPurple)
-            .padding(16.dp)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        when {
-            loading.value -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            errorMessage.value != null -> Text(
-                text = errorMessage.value ?: "Erro desconhecido",
-                color = Color.Red,
-                modifier = Modifier.align(Alignment.Center)
-            )
-            usuarioLogado.value != null -> {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    OutlinedTextField(
-                        profileImageUri = usuarioLogado.value!!.foto_perfil?.let { Uri.parse(it) },
-                        nome = usuarioLogado.value!!.nome_completo,
-                        email = usuarioLogado.value!!.email,
-                        onSelectImage = {},
-                        onEditClick = { navegacao.navigate("editar_info") }
-                    )
-                    CardBio(
-                        descricao = usuarioLogado.value!!.descricao ?: "",
-                        onEditClick = { navegacao.navigate("editar_info") }
-                    )
-                }
-            }
-        }
-    }
-}
+        Text("Editar Perfil", fontWeight = FontWeight.Bold, fontSize = 22.sp)
 
-@Composable
-fun CardInfoPessoais(
-    profileImageUri: Uri?,
-    nome: String?,
-    email: String?,
-    onSelectImage: () -> Unit,
-    onEditClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = PurpleDarker)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Informações pessoais",
-                    color = White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Nome
+        OutlinedTextField(
+            value = nome,
+            onValueChange = { nome = it },
+            label = { Text("Nome completo") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Email
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Data de nascimento
+        OutlinedTextField(
+            value = dataNascimento,
+            onValueChange = { dataNascimento = it },
+            label = { Text("Data de Nascimento (AAAA-MM-DD)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Foto de perfil
+        OutlinedTextField(
+            value = fotoPerfil,
+            onValueChange = { fotoPerfil = it },
+            label = { Text("URL da Foto de Perfil") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Descrição
+        OutlinedTextField(
+            value = descricao,
+            onValueChange = { descricao = it },
+            label = { Text("Descrição") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Senha
+        OutlinedTextField(
+            value = senha,
+            onValueChange = { senha = it },
+            label = { Text("Senha") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Tipo de usuário
+        OutlinedTextField(
+            value = tipoUsuario,
+            onValueChange = { tipoUsuario = it },
+            label = { Text("Tipo de Usuário") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Botão salvar
+        Button(
+            onClick = {
+                val dataFormatada = dataNascimento.take(10) // "2007-12-12"
+
+                val usuarioAtualizado = usuario.copy(
+                    nome_completo = nome,
+                    email = email,
+                    data_nascimento = dataFormatada,
+                    foto_perfil = fotoPerfil,
+                    descricao = descricao,
+                    senha = senha,
+                    tipo_usuario = tipoUsuario
                 )
-                Button(
-                    onClick = onEditClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = PurpleLighter)
-                ) {
-                    Text("Editar", color = Color(0xFF341E9B))
-                }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                // Chamada PUT para atualizar usuário
+                RetrofitInstance.usuarioService
+                    .atualizarUsuarioPorId(usuario.id_usuario, usuarioAtualizado)
+                    .enqueue(object : Callback<Usuario> {
+                        override fun onResponse(call: Call<Usuario>, response: Response<Usuario>) {
+                            if (response.isSuccessful) {
+                                Log.d("EditarInfo", "Usuário atualizado com sucesso!")
+                                onSave(usuarioAtualizado)
+                                navController.popBackStack()
+                            } else {
+                                Log.e("EditarInfo", "Erro ao atualizar usuário: ${response.code()}")
+                            }
+                        }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                if (profileImageUri != null) {
-                    Image(
-                        painter = rememberAsyncImagePainter(profileImageUri),
-                        contentDescription = "Avatar",
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clip(CircleShape)
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Avatar",
-                        tint = White,
-                        modifier = Modifier.size(64.dp)
-                    )
-                }
-
-                Button(
-                    onClick = onSelectImage,
-                    colors = ButtonDefaults.buttonColors(containerColor = PurpleLighter)
-                ) {
-                    Text("Enviar foto", color = Color(0xFF341E9B))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            InfoRow("Nome completo", nome)
-            InfoRow("Email", email)
+                        override fun onFailure(call: Call<Usuario>, t: Throwable) {
+                            Log.e("EditarInfo", "Falha na atualização: ${t.message}")
+                        }
+                    })
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Salvar alterações")
         }
     }
 }
 
 @Composable
-fun CardBio(onEditClick: () -> Unit, descricao: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = PurpleDarker)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Biografia",
-                    color = White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Button(
-                    onClick = onEditClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = PurpleLighter)
-                ) {
-                    Text("Editar", color = Color(0xFF341E9B))
-                }
+fun EditarInfoWrapper(navController: NavController, idUsuario: Int?) {
+    var usuario by remember { mutableStateOf<Usuario?>(null) }
+    var loading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(idUsuario) {
+        if (idUsuario != null) {
+            try {
+                val result = RetrofitInstance.usuarioService.getUsuarioPorIdSuspend(idUsuario)
+                usuario = result.usuario?.firstOrNull()
+                if (usuario == null) errorMessage = "Usuário não encontrado"
+            } catch (e: Exception) {
+                Log.e("EditarInfo", "Erro ao carregar usuário: ${e.message}")
+                errorMessage = "Erro ao carregar usuário"
+            } finally {
+                loading = false
             }
+        } else {
+            loading = false
+            errorMessage = "ID do usuário inválido"
+        }
+    }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = descricao.ifBlank { "Nenhuma biografia cadastrada" },
-                color = White,
-                fontSize = 14.sp
+    when {
+        loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        usuario != null -> {
+            EditarInfo(
+                navController = navController,
+                usuario = usuario!!,
+                onSave = { usuarioAtualizado ->
+                    // Atualize SharedPreferences ou estado global se necessário
+                    navController.popBackStack()
+                }
             )
         }
-    }
-}
-
-@Composable
-fun InfoRow(label: String, value: String?) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = "$label:", color = White, fontWeight = FontWeight.Medium)
-        if (value != null) {
-            Text(text = value, color = White)
+        else -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(text = errorMessage ?: "Erro desconhecido")
+            }
         }
     }
-}
-
-@Preview
-@Composable
-private fun PerfilPreview() {
-    val fakeNavController = rememberNavController()
-    Perfil(navegacao = fakeNavController)
 }

@@ -23,8 +23,13 @@ interface UsuarioService {
     @GET("usuario/{id}")
     suspend fun getUsuarioPorIdSuspend(@Path("id") id: Int): UsuarioResult
 
+    @Headers("Content-Type: application/json")
     @PUT("usuario/{id}")
-    fun atualizarUsuarioPorId(@Path("id") id: Int, usuarioAtualizado: Usuario): Call<Usuario>
+    fun atualizarUsuarioPorId(
+        @Path("id") id: Int,
+        @Body usuarioAtualizado: Usuario
+    ): Call<Usuario>
+
 
     @POST("usuario/login")
     fun loginUsuario(@Body body: LoginRequest): Call<LoginResponse>

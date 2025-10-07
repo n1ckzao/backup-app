@@ -34,7 +34,7 @@ import retrofit2.Callback
 import retrofit2.Response
 
 @Composable
-fun Perfil(navegacao: NavHostController) {
+fun Perfil(navController: NavHostController) {
     val usuarioLogado = remember { mutableStateOf<Usuario?>(null) }
     val loading = remember { mutableStateOf(true) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
@@ -99,11 +99,16 @@ fun Perfil(navegacao: NavHostController) {
                         nome = usuarioLogado.value!!.nome_completo,
                         email = usuarioLogado.value!!.email,
                         onSelectImage = {},
-                        onEditClick = { navegacao.navigate("editar_info") }
+                        onEditClick = {
+                            navController.navigate("editar_info/${idUsuario}")
+
+                        }
                     )
                     CardBio(
                         descricao = usuarioLogado.value!!.descricao ?: "",
-                        onEditClick = { navegacao.navigate("editar_info") }
+                        onEditClick = {
+                            navController.navigate("editar_info/${idUsuario}")
+                        }
                     )
                 }
             }
@@ -234,9 +239,3 @@ fun InfoRow(label: String, value: String?) {
     }
 }
 
-@Preview
-@Composable
-private fun PerfilPreview() {
-    val fakeNavController = rememberNavController()
-    Perfil(navegacao = fakeNavController)
-}
