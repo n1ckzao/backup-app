@@ -130,7 +130,7 @@ fun Login(navegacao: NavHostController?) {
                             label = { Text(text = "Email", color = Color.White) },
                             shape = RoundedCornerShape(33.dp),
                             singleLine = true,
-                            modifier = Modifier.height(55.dp).fillMaxWidth(),
+                            modifier = Modifier.height(57.dp).fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Email,
                                 imeAction = ImeAction.Next
@@ -156,7 +156,7 @@ fun Login(navegacao: NavHostController?) {
                             label = { Text(text = "Senha", color = Color.White) },
                             shape = RoundedCornerShape(33.dp),
                             singleLine = true,
-                            modifier = Modifier.height(55.dp).fillMaxWidth(),
+                            modifier = Modifier.height(57.dp).fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Password,
                                 imeAction = ImeAction.Done
