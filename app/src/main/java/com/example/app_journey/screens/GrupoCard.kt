@@ -1,6 +1,7 @@
 package com.example.app_journey.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -14,15 +15,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.app_journey.model.Grupo
 
 @Composable
-fun GrupoCard(grupo: Grupo) {
+fun GrupoCard(grupo: Grupo, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp)
+            .clickable { onClick(
+
+            ) }, // torna o card clicável
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF341E9B)),
         elevation = CardDefaults.cardElevation(6.dp)
@@ -33,7 +38,7 @@ fun GrupoCard(grupo: Grupo) {
                 .height(120.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 📷 Imagem do grupo
+            // Imagem
             Image(
                 painter = rememberAsyncImagePainter(grupo.imagem),
                 contentDescription = grupo.nome,
@@ -43,7 +48,6 @@ fun GrupoCard(grupo: Grupo) {
                     .padding(end = 12.dp)
             )
 
-            // 📝 Textos do grupo
             Column(
                 modifier = Modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.Center

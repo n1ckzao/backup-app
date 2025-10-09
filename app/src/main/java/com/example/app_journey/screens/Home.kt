@@ -96,7 +96,7 @@ fun Home(navegacao: NavHostController) {
                 ) {
                     // Botão Criar Grupo
                     Button(
-                        onClick = { navegacao?.navigate("criar_grupo") },
+                        onClick = { navegacao?.navigate("criargrupo") },
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                     ) {
@@ -118,9 +118,12 @@ fun Home(navegacao: NavHostController) {
                 // Lista de cards de grupos
                 LazyColumn {
                     items(grupos) { grupo ->
-                        GrupoCard(grupo)
+                        GrupoCard(grupo = grupo) {
+                            navegacao.navigate("grupoinfo/${grupo.id_grupo}") // 👈 abre tela de detalhes
+                        }
                     }
                 }
+
             }
         }
     }

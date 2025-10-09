@@ -159,6 +159,7 @@ fun AppContent() {
                 composable("profile") { Perfil(navController) }
                 composable("criar_grupo") { CriarGrupo(navegacao = navController) }
                 composable("meus_grupos") { MeusGrupos(navController) }
+                composable("grupoinfo") { GrupoInfo(navController) }
 
                 composable("editar_info/{idUsuario}") { backStackEntry ->
                     val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
