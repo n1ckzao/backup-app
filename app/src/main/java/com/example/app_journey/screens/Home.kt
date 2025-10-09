@@ -96,7 +96,7 @@ fun Home(navegacao: NavHostController) {
                 ) {
                     // Botão Criar Grupo
                     Button(
-                        onClick = { navegacao?.navigate("criargrupo") },
+                        onClick = { navegacao?.navigate("criar_grupo") },
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                     ) {
