@@ -209,39 +209,6 @@ fun Login(navegacao: NavHostController?) {
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Já é um profissional?",
-                                fontSize = 14.sp,
-                                color = Color.White
-                            )
-                            Button(
-                                modifier = Modifier.height(35.dp),
-                                colors = ButtonDefaults.buttonColors(Color.Transparent),
-                                onClick = { navegacao?.navigate("cadastro") }
-                            ) {
-                                Text(
-                                    text = buildAnnotatedString {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                textDecoration = TextDecoration.Underline
-                                            )
-                                        ) {
-                                            append("Criar conta profissional")
-                                        }
-                                    },
-                                    fontSize = 14.sp,
-                                    color = Color.White
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
                         Button(
                             onClick = {
                                 if (email.value.isBlank() || senha.value.isBlank()) {

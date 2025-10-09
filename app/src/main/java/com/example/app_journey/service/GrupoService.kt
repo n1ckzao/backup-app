@@ -19,18 +19,6 @@ interface GrupoService {
     fun getGrupoPorId(@Path("id")id : Int): Call<GruposResult>
 
     @GET("group")
-    fun listarGruposDoUsuario(@Query("id_usuario") id_usuario: Int): Call<Result>
+    fun listarGruposDoUsuario(@Query("id_usuario") id_usuario: Int): Call<GruposResult>
 
 }
-
-//interface GrupoService {
-//    @Headers("Content-Type: application/json")
-//    @POST("grupo")
-//    fun inserirGrupo(@Body grupo: Grupo): Call<GrupoResult>
-//
-//    @GET("grupo")
-//    fun listarGrupos(): Call<GrupoResult>
-//
-//    @GET("grupo/{id}")
-//    fun getGrupoPorId(@Path("id") id: Int): Call<Grupo>
-//}

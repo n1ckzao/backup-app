@@ -26,6 +26,8 @@ import com.example.app_journey.model.Grupo
 import com.example.app_journey.service.RetrofitInstance
 import com.example.app_journey.utils.SharedPrefHelper
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,24 +43,33 @@ fun MeusGrupos(navController: NavHostController) {
 
     LaunchedEffect(Unit) {
         scope.launch {
-            Log.d("MeusGrupos", "ID Usuário: $idUsuario")
             try {
-                val response = RetrofitInstance.grupoService.listarGrupos().execute()
-                if (response.isSuccessful) {
-                    val todosGrupos = response.body()?.grupos ?: emptyList<Grupo>()
-                    grupos = todosGrupos.filter { grupo -> grupo.id_usuario == idUsuario }
-                    loading = false
-                } else {
-                    errorMessage = "Erro ao carregar grupos: ${response.code()}"
-                    loading = false
+                loading = true
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.grupoService.listarGruposDoUsuario(idUsuario).execute()
                 }
+
+                if (response.isSuccessful) {
+                    val result = response.body()
+                    if (result != null && result.status) {
+                        grupos = result.grupos.filter { grupo ->
+                            grupo.id_usuario == idUsuario
+                        }
+                    } else {
+                        errorMessage = "Nenhum grupo encontrado."
+                    }
+                } else {
+                    errorMessage = "Erro HTTP: ${response.code()}"
+                }
+
             } catch (e: Exception) {
-                errorMessage = "Erro de rede: ${e.message}"
+                errorMessage = "Erro: ${e.localizedMessage}"
+            } finally {
                 loading = false
-                Log.e("MeusGrupos", "Erro: ${e.message}")
             }
         }
     }
+
 
 
     Scaffold(
@@ -69,7 +80,7 @@ fun MeusGrupos(navController: NavHostController) {
                         Image(
                             painter = painterResource(id = R.drawable.logoclaro),
                             contentDescription = "Logo Journey",
-                            modifier = Modifier.size(62.dp)
+                            modifier = Modifier.fillMaxHeight()
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Journey", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)

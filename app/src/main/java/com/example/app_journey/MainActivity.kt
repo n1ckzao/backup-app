@@ -87,7 +87,7 @@ fun AppContent() {
     val rotaAtual = navBackStackEntry.value?.destination?.route
 
     // Rotas que exibem AppBar + Drawer
-    val rotasComBarra = listOf("profile", "home")
+    val rotasComBarra = listOf("profile", "home", "criar_grupo", "editar_info/{idUsuario}", "meus_grupos")
 
     ModalNavigationDrawer(
         drawerState = drawerState,

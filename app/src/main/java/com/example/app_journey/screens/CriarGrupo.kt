@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.app_journey.model.GruposResult
 import com.example.app_journey.service.RetrofitFactory
 import com.example.app_journey.utils.SharedPrefHelper
 import retrofit2.Call
@@ -198,10 +199,10 @@ fun CriarGrupo(navegacao: NavHostController) {
                             id_usuario = id_usuario
                         )
 
-                        grupoService.inserirGrupo(novoGrupo).enqueue(object : Callback<com.example.app_journey.model.GruposResult> {
+                        grupoService.inserirGrupo(novoGrupo).enqueue(object : Callback<GruposResult> {
                             override fun onResponse(
-                                call: Call<com.example.app_journey.model.GruposResult>,
-                                response: Response<com.example.app_journey.model.GruposResult>
+                                call: Call<GruposResult>,
+                                response: Response<GruposResult>
                             ) {
                                 if (response.isSuccessful && response.body()?.status == true) {
                                     Toast.makeText(context, "Grupo criado com sucesso!", Toast.LENGTH_SHORT).show()
