@@ -54,10 +54,9 @@ fun Home(navegacao: NavHostController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF6F7FF)) // Fundo claro igual ao app
+            .background(Color(0xFFF6F7FF))
             .padding(16.dp)
     ) {
-        // Título principal
         Text(
             text = "Bem-vindo ao Journey!",
             fontSize = 26.sp,
@@ -73,10 +72,9 @@ fun Home(navegacao: NavHostController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Card roxo com "Grupos", botões e lista
         Card(
             modifier = Modifier.fillMaxSize(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF341E9B)), // Roxo
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF341E9B)),
             shape = RoundedCornerShape(32.dp),
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
@@ -94,16 +92,14 @@ fun Home(navegacao: NavHostController) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Botão Criar Grupo
                     Button(
-                        onClick = { navegacao?.navigate("criargrupo") },
+                        onClick = { navegacao?.navigate("criar_grupo") },
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                     ) {
                         Text("+ Criar Grupo", color = Color(0xFF341E9B), fontWeight = FontWeight.Bold)
                     }
 
-                    // Botão Categoria (apenas visual por enquanto)
                     Button(
                         onClick = { /* TODO: abrir filtro */ },
                         shape = RoundedCornerShape(24.dp),
@@ -115,11 +111,10 @@ fun Home(navegacao: NavHostController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Lista de cards de grupos
                 LazyColumn {
                     items(grupos) { grupo ->
                         GrupoCard(grupo = grupo) {
-                            navegacao.navigate("grupoinfo/${grupo.id_grupo}") // 👈 abre tela de detalhes
+                            navegacao.navigate("grupoinfo/${grupo.id_grupo}")
                         }
                     }
                 }
