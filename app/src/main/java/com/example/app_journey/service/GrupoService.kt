@@ -1,8 +1,8 @@
 package com.example.app_journey.service
 
+import com.example.app_journey.model.ApiResponse
 import com.example.app_journey.model.Grupo
 import com.example.app_journey.model.GruposResult
-import com.example.app_journey.model.Result
 import retrofit2.Call
 import retrofit2.http.*
 
@@ -20,5 +20,16 @@ interface GrupoService {
 
     @GET("group")
     fun listarGruposDoUsuario(@Query("id_usuario") id_usuario: Int): Call<GruposResult>
+
+    @GET("user/{id}/groups")
+    fun getGruposDoUsuario(@Path("id") idUsuario: Int): Call<GruposResult>
+
+
+    @POST("group/{id}/join")
+    fun participarDoGrupo(
+        @Path("id") idGrupo: Int,
+        @Body body: Map<String, Int>
+    ): Call<ApiResponse>
+
 
 }

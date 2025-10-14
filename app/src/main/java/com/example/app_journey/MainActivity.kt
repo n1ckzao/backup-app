@@ -163,9 +163,8 @@ fun AppContent() {
                     route = "grupoinfo/{id}",
                     arguments = listOf(navArgument("id") { type = NavType.IntType })
                 ) { backStackEntry ->
-                    val grupoId = backStackEntry.arguments?.getInt("id")
-                    // Aqui você pode buscar o grupo pelo ID ou passar dados mockados
-                    GrupoInfo(navController = navController /* , grupo = ... */)
+                    val grupoId = backStackEntry.arguments?.getInt("id") ?: 0
+                    GrupoInfo(navController = navController, grupo = grupoId)
                 }
 
                 composable("editar_info/{idUsuario}") { backStackEntry ->

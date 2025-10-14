@@ -6,3 +6,8 @@ data class Result(
     val itens: Int,
     val usuario: List<Usuario>
 )
+data class ApiResponse(
+    val status: Boolean,
+    val message: String
+)
+
