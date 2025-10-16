@@ -165,12 +165,15 @@ fun AppContent() {
                     val grupoId = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
                     GrupoInfo(navController = navController, grupoId = grupoId)
                 }
-
+                composable("calendario/{grupoId}") { backStackEntry ->
+                    val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
+                    Calendario(navController = navController, grupoId = grupoId)
+                }
 
                 composable("editar_info/{idUsuario}") { backStackEntry ->
                     val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
                     EditarInfoWrapper(navController, idUsuario)
-                }
+                }//edição do perfil
 
                 composable("verificar_email/{email}") { backStackEntry ->
                     val email = backStackEntry.arguments?.getString("email")

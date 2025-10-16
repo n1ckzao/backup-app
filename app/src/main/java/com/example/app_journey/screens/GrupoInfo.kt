@@ -152,6 +152,36 @@ fun GrupoInfo(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Button(
+                        onClick = { /* Chat */ },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF341E9B))
+                    ) {
+                        Text("Chat", color = Color.White, fontSize = 16.sp)
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Button(
+                        onClick = {
+                            navController.navigate("calendario/${grupoId}")
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF341E9B))
+                    ) {
+                        Text("Calendário", color = Color.White, fontSize = 16.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
                 // Botão Participar
                 Button(
                     onClick = {
