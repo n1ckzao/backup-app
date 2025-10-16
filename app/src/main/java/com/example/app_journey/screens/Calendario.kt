@@ -16,6 +16,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.app_journey.model.CalendarioResponseWrapper
+import com.example.app_journey.model.NovoEventoRequest
+import com.example.app_journey.service.RetrofitInstance
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -42,13 +45,46 @@ fun Calendario(
     var dataSelecionada by remember { mutableStateOf<LocalDate?>(null) }
 
     val primeiroDiaDoMes = mesAtual.atDay(1)
-    val diaSemanaInicio = primeiroDiaDoMes.dayOfWeek.value % 7 // Segunda=1 ... Domingo=7 → ajusta pra 0–6
+    val diaSemanaInicio = primeiroDiaDoMes.dayOfWeek.value % 7
     val diasNoMes = mesAtual.lengthOfMonth()
 
-    // Cria lista completa com espaços vazios antes e depois
     val diasCalendario = buildList {
-        repeat(diaSemanaInicio) { add(null) } // espaços antes do dia 1
+        repeat(diaSemanaInicio) { add(null) }
         (1..diasNoMes).forEach { add(mesAtual.atDay(it)) }
+    }
+
+    // 🔹 Passo 4: buscar eventos do grupo no backend
+    LaunchedEffect(grupoId) {
+        val service = RetrofitInstance.calendarioService
+        service.getEventosPorGrupo(grupoId).enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
+            override fun onResponse(
+                call: retrofit2.Call<CalendarioResponseWrapper>,
+                response: retrofit2.Response<CalendarioResponseWrapper>
+            ) {
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.status == true && body.Calendario != null) {
+                        eventos = body.Calendario.mapNotNull { item ->
+                            try {
+                                val data = LocalDate.parse(item.data_evento.substring(0, 10))
+                                Evento(
+                                    data = data,
+                                    descricao = item.descricao,
+                                    link = item.link,
+                                    grupoId = item.id_grupo
+                                )
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                    }
+                }
+            }
+
+            override fun onFailure(call: retrofit2.Call<CalendarioResponseWrapper>, t: Throwable) {
+                println("Erro ao carregar eventos: ${t.message}")
+            }
+        })
     }
 
     val diasSemana = DayOfWeek.values()
@@ -81,7 +117,7 @@ fun Calendario(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Cabeçalho dos dias da semana (Dom–Sáb)
+        // Cabeçalho dos dias da semana
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -109,9 +145,11 @@ fun Calendario(
             items(diasCalendario.size) { index ->
                 val dia = diasCalendario[index]
                 if (dia == null) {
-                    Box(modifier = Modifier
-                        .aspectRatio(1f)
-                        .background(Color.Transparent))
+                    Box(
+                        modifier = Modifier
+                            .aspectRatio(1f)
+                            .background(Color.Transparent)
+                    )
                 } else {
                     val eventoDia = eventos.find { it.data == dia }
                     val temEvento = eventoDia != null
@@ -145,12 +183,36 @@ fun Calendario(
                 data = dataSelecionada!!,
                 grupoId = grupoId,
                 onSalvar = { descricao, link ->
-                    eventos = eventos + Evento(
-                        data = dataSelecionada!!,
+                    // 🔹 Quando clicar em "Salvar", cria evento via API
+                    val service = RetrofitInstance.calendarioService
+                    val novoEvento = NovoEventoRequest(
+                        nome_evento = descricao,
+                        data_evento = "${dataSelecionada.toString()}T00:00:00",
                         descricao = descricao,
                         link = link,
-                        grupoId = grupoId
+                        id_grupo = grupoId
                     )
+
+                    service.criarEvento(novoEvento).enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
+                        override fun onResponse(
+                            call: retrofit2.Call<CalendarioResponseWrapper>,
+                            response: retrofit2.Response<CalendarioResponseWrapper>
+                        ) {
+                            if (response.isSuccessful) {
+                                eventos = eventos + Evento(
+                                    data = dataSelecionada!!,
+                                    descricao = descricao,
+                                    link = link,
+                                    grupoId = grupoId
+                                )
+                            }
+                        }
+
+                        override fun onFailure(call: retrofit2.Call<CalendarioResponseWrapper>, t: Throwable) {
+                            println("Erro ao criar evento: ${t.message}")
+                        }
+                    })
+
                     mostrarDialogo = false
                 },
                 onCancelar = { mostrarDialogo = false }
@@ -159,55 +221,6 @@ fun Calendario(
     }
 }
 
-@Composable
-fun NovoEventoDialog(
-    data: LocalDate,
-    grupoId: Int,
-    onSalvar: (descricao: String, link: String) -> Unit,
-    onCancelar: () -> Unit
-) {
-    var descricao by remember { mutableStateOf("") }
-    var link by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onCancelar,
-        confirmButton = {
-            Button(onClick = {
-                if (descricao.isNotBlank()) {
-                    onSalvar(descricao, link)
-                }
-            }) { Text("Salvar") }
-        },
-        dismissButton = {
-            TextButton(onClick = onCancelar) { Text("Cancelar") }
-        },
-        title = { Text("Novo evento em ${data.dayOfMonth}/${data.monthValue}") },
-        text = {
-            Column {
-                Text(
-                    "Grupo ID: $grupoId",
-                    color = Color.Gray,
-                    fontSize = MaterialTheme.typography.bodySmall.fontSize
-                )
-                OutlinedTextField(
-                    value = descricao,
-                    onValueChange = { descricao = it },
-                    label = { Text("Descrição") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = link,
-                    onValueChange = { link = it },
-                    label = { Text("Link da reunião (opcional)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-    )
-}
 
 @Preview(showSystemUi = true)
 @Composable

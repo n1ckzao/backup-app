@@ -13,5 +13,8 @@ object RetrofitInstance {
 
     val grupoService: GrupoService = retrofit.create(GrupoService::class.java)
 
+    val calendarioService: CalendarioService by lazy {
+        retrofit.create(CalendarioService::class.java)
+    }
 
 }
