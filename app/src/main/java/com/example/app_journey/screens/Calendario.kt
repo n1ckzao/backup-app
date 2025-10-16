@@ -151,75 +151,141 @@ fun Calendario(
                             .background(Color.Transparent)
                     )
                 } else {
-                    val eventoDia = eventos.find { it.data == dia }
-                    val temEvento = eventoDia != null
+                    val eventosDoDia = eventos.filter { it.data == dia }
 
-                    Box(
+                    Card(
                         modifier = Modifier
                             .aspectRatio(1f)
-                            .background(
-                                if (temEvento) Color(0xFFB1A6FF) else Color(0xFFE1E3FF),
-                                shape = MaterialTheme.shapes.medium
-                            )
                             .clickable {
                                 dataSelecionada = dia
                                 mostrarDialogo = true
                             },
-                        contentAlignment = Alignment.Center
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (eventosDoDia.isNotEmpty()) Color(0xFFDAD5FF) else Color(0xFFEDEEFF)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
-                        Text(
-                            text = dia.dayOfMonth.toString(),
-                            color = if (temEvento) Color.White else Color.Black,
-                            fontWeight = if (dia == hoje) FontWeight.Bold else FontWeight.Normal
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // Número do dia
+                            Text(
+                                text = dia.dayOfMonth.toString(),
+                                fontWeight = if (dia == LocalDate.now()) FontWeight.Bold else FontWeight.Medium,
+                                color = Color(0xFF2B1B84)
+                            )
+
+                            // Exibe os eventos (limitando a 2 para não poluir)
+                            eventosDoDia.take(2).forEach { evento ->
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = evento.descricao,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF2B1B84),
+                                    maxLines = 2
+                                )
+                            }
+
+                            // Indicador de mais eventos
+                            if (eventosDoDia.size > 2) {
+                                Text(
+                                    text = "+${eventosDoDia.size - 2} mais",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
+
 
         // Diálogo de novo evento
         if (mostrarDialogo && dataSelecionada != null) {
             NovoEventoDialog(
                 data = dataSelecionada!!,
                 grupoId = grupoId,
-                onSalvar = { descricao, link ->
-                    // 🔹 Quando clicar em "Salvar", cria evento via API
-                    val service = RetrofitInstance.calendarioService
+                onSalvar = { descricao, dataHora, link ->
                     val novoEvento = NovoEventoRequest(
                         nome_evento = descricao,
-                        data_evento = "${dataSelecionada.toString()}T00:00:00",
+                        data_evento = dataHora,
                         descricao = descricao,
                         link = link,
                         id_grupo = grupoId
                     )
 
-                    service.criarEvento(novoEvento).enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
-                        override fun onResponse(
-                            call: retrofit2.Call<CalendarioResponseWrapper>,
-                            response: retrofit2.Response<CalendarioResponseWrapper>
-                        ) {
-                            if (response.isSuccessful) {
-                                eventos = eventos + Evento(
-                                    data = dataSelecionada!!,
-                                    descricao = descricao,
-                                    link = link,
-                                    grupoId = grupoId
-                                )
-                            }
-                        }
-
-                        override fun onFailure(call: retrofit2.Call<CalendarioResponseWrapper>, t: Throwable) {
-                            println("Erro ao criar evento: ${t.message}")
-                        }
-                    })
-
-                    mostrarDialogo = false
+                    // chamada Retrofit...
                 },
                 onCancelar = { mostrarDialogo = false }
             )
+
         }
     }
 }
+@Composable
+fun NovoEventoDialog(
+    data: LocalDate,
+    grupoId: Int,
+    onSalvar: (descricao: String, dataHora: String, link: String) -> Unit,
+    onCancelar: () -> Unit
+) {
+    var descricao by remember { mutableStateOf("") }
+    var link by remember { mutableStateOf("") }
+    var hora by remember { mutableStateOf("14:30") } // valor default
+
+    AlertDialog(
+        onDismissRequest = onCancelar,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (descricao.isNotBlank()) {
+                        val dataHora = "${data}T$hora:00"
+                        onSalvar(descricao, dataHora, link)
+                    }
+                }
+            ) { Text("Salvar") }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancelar) { Text("Cancelar") }
+        },
+        title = {
+            Text(
+                text = "Novo evento em ${data.dayOfMonth}/${data.monthValue}/${data.year}",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = descricao,
+                    onValueChange = { descricao = it },
+                    label = { Text("Descrição") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = hora,
+                    onValueChange = { hora = it },
+                    label = { Text("Hora (HH:mm)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = link,
+                    onValueChange = { link = it },
+                    label = { Text("Link (opcional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    )
+}
+
+
 
 
 @Preview(showSystemUi = true)
