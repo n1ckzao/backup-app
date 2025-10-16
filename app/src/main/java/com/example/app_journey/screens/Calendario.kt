@@ -1,6 +1,5 @@
 package com.example.app_journey.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,9 +16,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.*
 
 data class Evento(
     val data: LocalDate,
@@ -37,14 +38,20 @@ fun Calendario(
     var mesAtual by remember { mutableStateOf(YearMonth.now()) }
     var eventos by remember { mutableStateOf(listOf<Evento>()) }
 
-    // Controle de diálogo para novo evento
     var mostrarDialogo by remember { mutableStateOf(false) }
     var dataSelecionada by remember { mutableStateOf<LocalDate?>(null) }
 
-    val diasMes = mesAtual
-        .atEndOfMonth()
-        .dayOfMonth
-        .let { dias -> (1..dias).map { mesAtual.atDay(it) } }
+    val primeiroDiaDoMes = mesAtual.atDay(1)
+    val diaSemanaInicio = primeiroDiaDoMes.dayOfWeek.value % 7 // Segunda=1 ... Domingo=7 → ajusta pra 0–6
+    val diasNoMes = mesAtual.lengthOfMonth()
+
+    // Cria lista completa com espaços vazios antes e depois
+    val diasCalendario = buildList {
+        repeat(diaSemanaInicio) { add(null) } // espaços antes do dia 1
+        (1..diasNoMes).forEach { add(mesAtual.atDay(it)) }
+    }
+
+    val diasSemana = DayOfWeek.values()
 
     Column(
         modifier = Modifier
@@ -52,7 +59,7 @@ fun Calendario(
             .background(Color(0xFFEDEEFF))
             .padding(16.dp)
     ) {
-        // Cabeçalho
+        // Cabeçalho do mês
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -62,7 +69,8 @@ fun Calendario(
                 Text("<", fontSize = MaterialTheme.typography.titleLarge.fontSize)
             }
             Text(
-                text = mesAtual.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
+                text = mesAtual.month.getDisplayName(TextStyle.FULL, Locale("pt", "BR"))
+                    .replaceFirstChar { it.uppercase() } + " ${mesAtual.year}",
                 fontWeight = FontWeight.Bold,
                 fontSize = MaterialTheme.typography.titleLarge.fontSize
             )
@@ -71,54 +79,78 @@ fun Calendario(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Grid de dias
+        // Cabeçalho dos dias da semana (Dom–Sáb)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            listOf("D", "S", "T", "Q", "Q", "S", "S").forEach {
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = it,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF341E9B)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Grade do calendário
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(diasMes) { dia ->
-                val eventoDia = eventos.find { it.data == dia }
-                val temEvento = eventoDia != null
-
-                Box(
-                    modifier = Modifier
+            items(diasCalendario.size) { index ->
+                val dia = diasCalendario[index]
+                if (dia == null) {
+                    Box(modifier = Modifier
                         .aspectRatio(1f)
-                        .background(
-                            if (temEvento) Color(0xFFB1A6FF) else Color(0xFFE1E3FF),
-                            shape = MaterialTheme.shapes.medium
+                        .background(Color.Transparent))
+                } else {
+                    val eventoDia = eventos.find { it.data == dia }
+                    val temEvento = eventoDia != null
+
+                    Box(
+                        modifier = Modifier
+                            .aspectRatio(1f)
+                            .background(
+                                if (temEvento) Color(0xFFB1A6FF) else Color(0xFFE1E3FF),
+                                shape = MaterialTheme.shapes.medium
+                            )
+                            .clickable {
+                                dataSelecionada = dia
+                                mostrarDialogo = true
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = dia.dayOfMonth.toString(),
+                            color = if (temEvento) Color.White else Color.Black,
+                            fontWeight = if (dia == hoje) FontWeight.Bold else FontWeight.Normal
                         )
-                        .clickable {
-                            dataSelecionada = dia
-                            mostrarDialogo = true
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = dia.dayOfMonth.toString(),
-                        color = if (temEvento) Color.White else Color.Black,
-                        fontWeight = if (dia == hoje) FontWeight.Bold else FontWeight.Normal
-                    )
+                    }
                 }
             }
         }
 
-        // Diálogo de criação de evento
+        // Diálogo de novo evento
         if (mostrarDialogo && dataSelecionada != null) {
             NovoEventoDialog(
                 data = dataSelecionada!!,
                 grupoId = grupoId,
                 onSalvar = { descricao, link ->
-                    val novo = Evento(
+                    eventos = eventos + Evento(
                         data = dataSelecionada!!,
                         descricao = descricao,
                         link = link,
                         grupoId = grupoId
                     )
-                    eventos = eventos + novo
                     mostrarDialogo = false
                 },
                 onCancelar = { mostrarDialogo = false }
@@ -140,13 +172,11 @@ fun NovoEventoDialog(
     AlertDialog(
         onDismissRequest = onCancelar,
         confirmButton = {
-            Button(
-                onClick = {
-                    if (descricao.isNotBlank()) {
-                        onSalvar(descricao, link)
-                    }
+            Button(onClick = {
+                if (descricao.isNotBlank()) {
+                    onSalvar(descricao, link)
                 }
-            ) { Text("Salvar") }
+            }) { Text("Salvar") }
         },
         dismissButton = {
             TextButton(onClick = onCancelar) { Text("Cancelar") }
@@ -154,7 +184,11 @@ fun NovoEventoDialog(
         title = { Text("Novo evento em ${data.dayOfMonth}/${data.monthValue}") },
         text = {
             Column {
-                Text("Grupo ID: $grupoId", color = Color.Gray, fontSize = MaterialTheme.typography.bodySmall.fontSize)
+                Text(
+                    "Grupo ID: $grupoId",
+                    color = Color.Gray,
+                    fontSize = MaterialTheme.typography.bodySmall.fontSize
+                )
                 OutlinedTextField(
                     value = descricao,
                     onValueChange = { descricao = it },
