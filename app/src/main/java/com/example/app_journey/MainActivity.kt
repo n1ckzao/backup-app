@@ -161,11 +161,11 @@ fun AppContent() {
                 composable("meus_grupos") { MeusGrupos(navController) }
                 composable(
                     route = "grupoinfo/{id}",
-                    arguments = listOf(navArgument("id") { type = NavType.IntType })
                 ) { backStackEntry ->
-                    val grupoId = backStackEntry.arguments?.getInt("id") ?: 0
-                    GrupoInfo(navController = navController, grupo = grupoId)
+                    val grupoId = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
+                    GrupoInfo(navController = navController, grupoId = grupoId)
                 }
+
 
                 composable("editar_info/{idUsuario}") { backStackEntry ->
                     val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()

@@ -7,6 +7,13 @@ data class GruposResult(
     val grupos: List<Grupo>
 )
 
+data class GrupoWrapper(
+    val status: Boolean,
+    val status_code: Int,
+    val grupo: List<Grupo>
+)
+
+
 data class Grupo(
     val id_grupo: Int? = null,
     val nome: String,

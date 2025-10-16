@@ -8,6 +8,7 @@ data class Result(
 )
 data class ApiResponse(
     val status: Boolean,
+    val status_code: Int,
     val message: String
 )
 
