@@ -8,6 +8,6 @@
 
     <!-- Permitir HTTP especificamente para seu IP -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">10.107.144.31</domain>
+        <domain includeSubdomains="false">10.107.134.32</domain>
     </domain-config>
 </network-security-config>

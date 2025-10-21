@@ -1,11 +1,11 @@
 package com.example.app_journey.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -209,19 +209,43 @@ fun Calendario(
             NovoEventoDialog(
                 data = dataSelecionada!!,
                 grupoId = grupoId,
-                onSalvar = { descricao, dataHora, link ->
+                onSalvar = { nome, descricao, dataHora, link ->
                     val novoEvento = NovoEventoRequest(
-                        nome_evento = descricao,
+                        nome_evento = nome,
                         data_evento = dataHora,
                         descricao = descricao,
                         link = link,
                         id_grupo = grupoId
                     )
 
-                    // chamada Retrofit...
+                    val service = RetrofitInstance.calendarioService
+                    service.criarEvento(novoEvento).enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
+                        override fun onResponse(
+                            call: retrofit2.Call<CalendarioResponseWrapper>,
+                            response: retrofit2.Response<CalendarioResponseWrapper>
+                        ) {
+                            println("🟢 Resposta: ${response.code()} ${response.message()}")
+                            println("🟢 Body: ${response.body()}")
+                            if (response.isSuccessful) {
+                                eventos = eventos + Evento(
+                                    data = dataSelecionada!!,
+                                    descricao = descricao,
+                                    link = link,
+                                    grupoId = grupoId
+                                )
+                            }
+                        }
+
+                        override fun onFailure(call: retrofit2.Call<CalendarioResponseWrapper>, t: Throwable) {
+                            println("Erro ao criar evento: ${t.message}")
+                        }
+                    })
+
+                    mostrarDialogo = false
                 },
                 onCancelar = { mostrarDialogo = false }
             )
+
 
         }
     }
@@ -230,24 +254,28 @@ fun Calendario(
 fun NovoEventoDialog(
     data: LocalDate,
     grupoId: Int,
-    onSalvar: (descricao: String, dataHora: String, link: String) -> Unit,
+    onSalvar: (nome: String, descricao: String, dataHora: String, link: String) -> Unit,
     onCancelar: () -> Unit
 ) {
+    var nome by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
     var link by remember { mutableStateOf("") }
-    var hora by remember { mutableStateOf("14:30") } // valor default
+    var hora by remember { mutableStateOf("14:30") } // valor padrão
 
     AlertDialog(
         onDismissRequest = onCancelar,
         confirmButton = {
             TextButton(
                 onClick = {
-                    if (descricao.isNotBlank()) {
+                    println("🟢 Clicou em salvar! Nome=$nome, Desc=$descricao")
+                    if (nome.isNotBlank() && descricao.isNotBlank()) {
                         val dataHora = "${data}T$hora:00"
-                        onSalvar(descricao, dataHora, link)
+                        onSalvar(nome, descricao, dataHora, link)
                     }
                 }
-            ) { Text("Salvar") }
+            ) {
+                Text("Salvar")
+            }
         },
         dismissButton = {
             TextButton(onClick = onCancelar) { Text("Cancelar") }
@@ -260,6 +288,13 @@ fun NovoEventoDialog(
         },
         text = {
             Column {
+                OutlinedTextField(
+                    value = nome,
+                    onValueChange = { nome = it },
+                    label = { Text("Nome do evento") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = descricao,
                     onValueChange = { descricao = it },
@@ -284,6 +319,7 @@ fun NovoEventoDialog(
         }
     )
 }
+
 
 
 

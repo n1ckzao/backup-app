@@ -23,11 +23,11 @@ interface GrupoService {
     fun getGrupoById(@Path("id") id: Int): Call<GrupoWrapper>
 
 
-    @GET("/v1/journey/usuario/{id}/grupos")
+    @GET("usuario/{id}/grupos")
     fun listarGruposDoUsuario(@Path("id") idUsuario: Int): Call<GruposResult>
 
     // Novo endpoint para os grupos que o usuário participa
-    @GET("/v1/journey/usuario/{id}/grupos-participando")
+    @GET("usuario/{id}/grupos-participando")
     fun listarGruposParticipando(@Path("id") idUsuario: Int): Call<GruposResult>
 
     @GET("user/{id}/groups")
