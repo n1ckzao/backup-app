@@ -23,4 +23,9 @@ interface CalendarioService {
     fun criarEvento(
         @Body evento: NovoEventoRequest
     ): Call<CalendarioResponseWrapper>
+
+    @DELETE("calendario/{id_calendario}")
+    fun deleteEventoPorId(@Path("id_calendario") idEvento: Int): Call<Void>
+
+
 }

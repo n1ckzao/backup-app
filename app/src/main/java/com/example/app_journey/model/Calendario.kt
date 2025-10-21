@@ -27,7 +27,6 @@ data class GrupoCalendario(
     val id_usuario: Int
 )
 
-// Para o POST — corpo de criação de evento
 data class NovoEventoRequest(
     val nome_evento: String,
     val data_evento: String,
