@@ -12,14 +12,8 @@ interface CalendarioService {
     @GET("calendario")
     fun getTodosEventos(): Call<CalendarioResponseWrapper>
 
-    // GET: eventos por grupo
-    @GET("grupo/{id}/calendario")
-    fun getEventosPorGrupo(
-        @Path("id") idGrupo: Int
-    ): Call<CalendarioResponseWrapper>
-
     // GET: evento específico por id
-    @GET("calendario/{id}")
+    @GET("calendario/:id")
     fun getEventoPorId(
         @Path("id") idEvento: Int
     ): Call<CalendarioResponseWrapper>

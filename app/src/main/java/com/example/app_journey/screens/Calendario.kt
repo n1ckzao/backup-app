@@ -1,25 +1,23 @@
 package com.example.app_journey.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.app_journey.model.CalendarioResponseWrapper
 import com.example.app_journey.model.NovoEventoRequest
 import com.example.app_journey.service.RetrofitInstance
-import java.time.DayOfWeek
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
@@ -32,31 +30,30 @@ data class Evento(
     val grupoId: Int
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Calendario(
     navController: NavHostController,
-    grupoId: Int
-) {
+    grupoId: Int) {
     val hoje = remember { LocalDate.now() }
     var mesAtual by remember { mutableStateOf(YearMonth.now()) }
     var eventos by remember { mutableStateOf(listOf<Evento>()) }
 
-    var mostrarDialogo by remember { mutableStateOf(false) }
     var dataSelecionada by remember { mutableStateOf<LocalDate?>(null) }
 
-    val primeiroDiaDoMes = mesAtual.atDay(1)
-    val diaSemanaInicio = primeiroDiaDoMes.dayOfWeek.value % 7
-    val diasNoMes = mesAtual.lengthOfMonth()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coroutineScope = rememberCoroutineScope()
 
-    val diasCalendario = buildList {
-        repeat(diaSemanaInicio) { add(null) }
-        (1..diasNoMes).forEach { add(mesAtual.atDay(it)) }
-    }
+    // Campos do novo evento
+    var novoNome by remember { mutableStateOf("") }
+    var novaDescricao by remember { mutableStateOf("") }
+    var novoLink by remember { mutableStateOf("") }
+    var novaHora by remember { mutableStateOf("") }
 
-    // 🔹 Passo 4: buscar eventos do grupo no backend
-    LaunchedEffect(grupoId) {
+    // Buscar eventos do backend
+    LaunchedEffect(Unit) {
         val service = RetrofitInstance.calendarioService
-        service.getEventosPorGrupo(grupoId).enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
+        service.getTodosEventos().enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
             override fun onResponse(
                 call: retrofit2.Call<CalendarioResponseWrapper>,
                 response: retrofit2.Response<CalendarioResponseWrapper>
@@ -73,10 +70,8 @@ fun Calendario(
                                     link = item.link,
                                     grupoId = item.id_grupo
                                 )
-                            } catch (e: Exception) {
-                                null
-                            }
-                        }
+                            } catch (e: Exception) { null }
+                        }.filter { it.grupoId == grupoId } // 🔥 filtra os eventos do grupo atual
                     }
                 }
             }
@@ -87,115 +82,86 @@ fun Calendario(
         })
     }
 
-    val diasSemana = DayOfWeek.values()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFEDEEFF))
-            .padding(16.dp)
-    ) {
-        // Cabeçalho do mês
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    val primeiroDiaDoMes = mesAtual.atDay(1)
+    val diaSemanaInicio = primeiroDiaDoMes.dayOfWeek.value % 7
+    val diasNoMes = mesAtual.lengthOfMonth()
+    val diasCalendario = buildList<LocalDate?> {
+        repeat(diaSemanaInicio) { add(null) }
+        (1..diasNoMes).forEach { add(mesAtual.atDay(it)) }
+    }
+
+    Box {
+        // 1️⃣ Corpo do calendário
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFEDEEFF))
+                .padding(16.dp)
         ) {
-            IconButton(onClick = { mesAtual = mesAtual.minusMonths(1) }) {
-                Text("<", fontSize = MaterialTheme.typography.titleLarge.fontSize)
+            // Cabeçalho mês
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { mesAtual = mesAtual.minusMonths(1) }) { Text("<") }
+                Text(
+                    text = "${mesAtual.month.getDisplayName(TextStyle.FULL, Locale("pt", "BR")).replaceFirstChar { it.uppercase() }} ${mesAtual.year}",
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = { mesAtual = mesAtual.plusMonths(1) }) { Text(">") }
             }
-            Text(
-                text = mesAtual.month.getDisplayName(TextStyle.FULL, Locale("pt", "BR"))
-                    .replaceFirstChar { it.uppercase() } + " ${mesAtual.year}",
-                fontWeight = FontWeight.Bold,
-                fontSize = MaterialTheme.typography.titleLarge.fontSize
-            )
-            IconButton(onClick = { mesAtual = mesAtual.plusMonths(1) }) {
-                Text(">", fontSize = MaterialTheme.typography.titleLarge.fontSize)
-            }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Cabeçalho dos dias da semana
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            listOf("D", "S", "T", "Q", "Q", "S", "S").forEach {
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = it,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF341E9B)
-                    )
+            // Dias da semana
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                listOf("D","S","T","Q","Q","S","S").forEach { dia ->
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        Text(dia, fontWeight = FontWeight.Bold, color = Color(0xFF341E9B))
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Grade do calendário
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(7),
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(diasCalendario.size) { index ->
-                val dia = diasCalendario[index]
-                if (dia == null) {
-                    Box(
-                        modifier = Modifier
-                            .aspectRatio(1f)
-                            .background(Color.Transparent)
-                    )
-                } else {
-                    val eventosDoDia = eventos.filter { it.data == dia }
-
-                    Card(
-                        modifier = Modifier
-                            .aspectRatio(1f)
-                            .clickable {
-                                dataSelecionada = dia
-                                mostrarDialogo = true
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (eventosDoDia.isNotEmpty()) Color(0xFFDAD5FF) else Color(0xFFEDEEFF)
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
+            // Grade do calendário
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(7),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(diasCalendario.size) { index ->
+                    val dia = diasCalendario[index]
+                    if (dia == null) Box(modifier = Modifier.aspectRatio(1f)) {}
+                    else {
+                        val eventosDoDia = eventos.filter { it.data == dia }
+                        Card(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            // Número do dia
-                            Text(
-                                text = dia.dayOfMonth.toString(),
-                                fontWeight = if (dia == LocalDate.now()) FontWeight.Bold else FontWeight.Medium,
-                                color = Color(0xFF2B1B84)
+                                .aspectRatio(1f)
+                                .clickable {
+                                    dataSelecionada = dia
+                                    coroutineScope.launch { sheetState.show() }
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (eventosDoDia.isNotEmpty()) Color(0xFFDAD5FF) else Color(0xFFEDEEFF)
                             )
-
-                            // Exibe os eventos (limitando a 2 para não poluir)
-                            eventosDoDia.take(2).forEach { evento ->
-                                Spacer(modifier = Modifier.height(4.dp))
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
                                 Text(
-                                    text = evento.descricao,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF2B1B84),
-                                    maxLines = 2
+                                    text = dia.dayOfMonth.toString(),
+                                    fontWeight = if (dia == hoje) FontWeight.Bold else FontWeight.Medium
                                 )
-                            }
-
-                            // Indicador de mais eventos
-                            if (eventosDoDia.size > 2) {
-                                Text(
-                                    text = "+${eventosDoDia.size - 2} mais",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color.Gray
-                                )
+                                eventosDoDia.take(2).forEach { evento ->
+                                    Text(evento.descricao, style = MaterialTheme.typography.bodySmall, maxLines = 2)
+                                }
+                                if (eventosDoDia.size > 2)
+                                    Text("+${eventosDoDia.size - 2} mais", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                             }
                         }
                     }
@@ -203,130 +169,83 @@ fun Calendario(
             }
         }
 
-
-        // Diálogo de novo evento
-        if (mostrarDialogo && dataSelecionada != null) {
-            NovoEventoDialog(
-                data = dataSelecionada!!,
-                grupoId = grupoId,
-                onSalvar = { nome, descricao, dataHora, link ->
-                    val novoEvento = NovoEventoRequest(
-                        nome_evento = nome,
-                        data_evento = dataHora,
-                        descricao = descricao,
-                        link = link,
-                        id_grupo = grupoId
+        // 2️⃣ Bottom sheet que abre somente ao clicar no dia
+        if (dataSelecionada != null) {
+            ModalBottomSheet(
+                onDismissRequest = { dataSelecionada = null },
+                sheetState = sheetState
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Eventos de ${dataSelecionada!!.dayOfMonth}/${dataSelecionada!!.monthValue}/${dataSelecionada!!.year}",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = MaterialTheme.typography.titleMedium.fontSize
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    val service = RetrofitInstance.calendarioService
-                    service.criarEvento(novoEvento).enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
-                        override fun onResponse(
-                            call: retrofit2.Call<CalendarioResponseWrapper>,
-                            response: retrofit2.Response<CalendarioResponseWrapper>
-                        ) {
-                            println("🟢 Resposta: ${response.code()} ${response.message()}")
-                            println("🟢 Body: ${response.body()}")
-                            if (response.isSuccessful) {
-                                eventos = eventos + Evento(
-                                    data = dataSelecionada!!,
-                                    descricao = descricao,
-                                    link = link,
-                                    grupoId = grupoId
-                                )
-                            }
+                    val eventosDoDia = eventos.filter { it.data == dataSelecionada }
+                    if (eventosDoDia.isEmpty()) Text("Nenhum evento", color = Color.Gray)
+                    else eventosDoDia.forEach { Text("- ${it.descricao}") }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Criar novo evento", fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(value = novoNome, onValueChange = { novoNome = it }, label = { Text("Nome") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(value = novaDescricao, onValueChange = { novaDescricao = it }, label = { Text("Descrição") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(value = novaHora, onValueChange = { novaHora = it }, label = { Text("Hora (HH:mm)") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(value = novoLink, onValueChange = { novoLink = it }, label = { Text("Link (opcional)") }, modifier = Modifier.fillMaxWidth())
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = {
+                        if (novoNome.isNotBlank() && novaDescricao.isNotBlank()) {
+                            val dataHora = "${dataSelecionada}T$novaHora:00"
+                            val novoEvento = NovoEventoRequest(novoNome, dataHora, novaDescricao, novoLink, grupoId)
+
+                            RetrofitInstance.calendarioService.criarEvento(novoEvento)
+                                .enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
+                                    override fun onResponse(
+                                        call: retrofit2.Call<CalendarioResponseWrapper>,
+                                        response: retrofit2.Response<CalendarioResponseWrapper>
+                                    ) {
+                                        if (response.isSuccessful) {
+                                            println("✅ Evento criado com sucesso no backend")
+
+                                            // Atualiza localmente
+                                            eventos = eventos + Evento(
+                                                dataSelecionada!!,
+                                                novaDescricao,
+                                                novoLink,
+                                                grupoId
+                                            )
+
+                                            // Limpa campos
+                                            novoNome = ""
+                                            novaDescricao = ""
+                                            novoLink = ""
+                                            novaHora = ""
+                                        } else {
+                                            println("❌ Erro no backend: ${response.code()} ${response.message()}")
+                                        }
+                                    }
+
+                                    override fun onFailure(
+                                        call: retrofit2.Call<CalendarioResponseWrapper>,
+                                        t: Throwable
+                                    ) {
+                                        println("⚠️ Falha ao conectar ao backend: ${t.message}")
+                                    }
+                                })
                         }
-
-                        override fun onFailure(call: retrofit2.Call<CalendarioResponseWrapper>, t: Throwable) {
-                            println("Erro ao criar evento: ${t.message}")
-                        }
-                    })
-
-                    mostrarDialogo = false
-                },
-                onCancelar = { mostrarDialogo = false }
-            )
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Salvar evento")
+                    }
 
 
+                }
+            }
         }
     }
-}
-@Composable
-fun NovoEventoDialog(
-    data: LocalDate,
-    grupoId: Int,
-    onSalvar: (nome: String, descricao: String, dataHora: String, link: String) -> Unit,
-    onCancelar: () -> Unit
-) {
-    var nome by remember { mutableStateOf("") }
-    var descricao by remember { mutableStateOf("") }
-    var link by remember { mutableStateOf("") }
-    var hora by remember { mutableStateOf("14:30") } // valor padrão
-
-    AlertDialog(
-        onDismissRequest = onCancelar,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    println("🟢 Clicou em salvar! Nome=$nome, Desc=$descricao")
-                    if (nome.isNotBlank() && descricao.isNotBlank()) {
-                        val dataHora = "${data}T$hora:00"
-                        onSalvar(nome, descricao, dataHora, link)
-                    }
-                }
-            ) {
-                Text("Salvar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onCancelar) { Text("Cancelar") }
-        },
-        title = {
-            Text(
-                text = "Novo evento em ${data.dayOfMonth}/${data.monthValue}/${data.year}",
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = nome,
-                    onValueChange = { nome = it },
-                    label = { Text("Nome do evento") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = descricao,
-                    onValueChange = { descricao = it },
-                    label = { Text("Descrição") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = hora,
-                    onValueChange = { hora = it },
-                    label = { Text("Hora (HH:mm)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = link,
-                    onValueChange = { link = it },
-                    label = { Text("Link (opcional)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-    )
-}
-
-
-
-
-
-@Preview(showSystemUi = true)
-@Composable
-fun PreviewCalendario() {
-    val fakeNav = rememberNavController()
-    Calendario(navController = fakeNav, grupoId = 1)
 }
