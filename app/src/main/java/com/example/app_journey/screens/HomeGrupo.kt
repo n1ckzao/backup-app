@@ -30,7 +30,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 @Composable
 fun HomeGrupo(
     navController: NavHostController,
-    grupoId: Int
+    grupoId: Int,
+    idUsuario: Int
 ) {
     var grupo by remember { mutableStateOf<com.example.app_journey.model.Grupo?>(null) }
     var carregandoDados by remember { mutableStateOf(true) }
@@ -141,7 +142,7 @@ fun HomeGrupo(
                         Spacer(modifier = Modifier.width(4.dp))
                         Button(
                             onClick = {
-                                navController.navigate("calendario/${grupoId}")
+                                navController.navigate("calendario/${grupo?.id_grupo}/${idUsuario}")
                             },
                             modifier = Modifier
                                 .weight(1f)

@@ -32,5 +32,7 @@ data class NovoEventoRequest(
     val data_evento: String,
     val descricao: String,
     val link: String,
-    val id_grupo: Int
+    val id_grupo: Int,
+    val id_usuario: Int
 )
+

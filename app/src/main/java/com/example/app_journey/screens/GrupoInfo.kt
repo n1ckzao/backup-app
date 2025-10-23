@@ -194,7 +194,7 @@ fun GrupoInfo(
 
                                 if (jaParticipa || criouGrupo) {
                                     Log.d("GrupoInfo", "✅ Usuário já participa ou criou o grupo")
-                                    navController.navigate("home_grupo/${grupoId}")
+                                    navController.navigate("home_grupo/${grupoId}/${idUsuario}")
                                     return@launch
                                 }
 
@@ -210,7 +210,7 @@ fun GrupoInfo(
                                 if (response.isSuccessful && (response.body()?.status == true || response.code() in 200..299)) {
                                     participando = true
                                     Toast.makeText(context, "Você agora participa do grupo!", Toast.LENGTH_SHORT).show()
-                                    navController.navigate("home_grupo/${grupoId}")
+                                    navController.navigate("home_grupo/${grupoId}/${idUsuario}")
                                 } else {
                                     Toast.makeText(context, "Erro ao entrar no grupo", Toast.LENGTH_SHORT).show()
                                 }

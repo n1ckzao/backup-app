@@ -39,7 +39,9 @@ data class Evento(
 @Composable
 fun Calendario(
     navController: NavHostController,
-    grupoId: Int) {
+    grupoId: Int,
+    idUsuario: Int
+){
     val hoje = remember { LocalDate.now() }
     var mesAtual by remember { mutableStateOf(YearMonth.now()) }
     var eventos by remember { mutableStateOf(listOf<Evento>()) }
@@ -57,6 +59,7 @@ fun Calendario(
 
     // Buscar eventos do backend
     LaunchedEffect(Unit) {
+        println("🟣 Calendario iniciado - grupoId=$grupoId, idUsuario=$idUsuario")
         val service = RetrofitInstance.calendarioService
         service.getTodosEventos().enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
             override fun onResponse(
@@ -85,6 +88,7 @@ fun Calendario(
 
             override fun onFailure(call: retrofit2.Call<CalendarioResponseWrapper>, t: Throwable) {
                 println("Erro ao carregar eventos: ${t.message}")
+
             }
         })
     }
@@ -269,12 +273,19 @@ fun Calendario(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(value = novaHora, onValueChange = { novaHora = it }, label = { Text("Hora (HH:mm)") }, modifier = Modifier.fillMaxWidth())
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(value = novoLink, onValueChange = { novoLink = it }, label = { Text("Link (opcional)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = novoLink, onValueChange = { novoLink = it }, label = { Text("Link") }, modifier = Modifier.fillMaxWidth())
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = {
                         if (novoNome.isNotBlank() && novaDescricao.isNotBlank()) {
                             val dataHora = "${dataSelecionada}T$novaHora:00"
-                            val novoEvento = NovoEventoRequest(novoNome, dataHora, novaDescricao, novoLink, grupoId)
+                            val novoEvento = NovoEventoRequest(
+                                nome_evento = novoNome,
+                                data_evento = dataHora,
+                                descricao = novaDescricao,
+                                link = novoLink,
+                                id_grupo = grupoId,
+                                id_usuario = idUsuario
+                            )
 
                             RetrofitInstance.calendarioService.criarEvento(novoEvento)
                                 .enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
@@ -283,34 +294,37 @@ fun Calendario(
                                         response: retrofit2.Response<CalendarioResponseWrapper>
                                     ) {
                                         if (response.isSuccessful) {
-                                            val createdItem = response.body()?.Calendario?.lastOrNull()
-                                            if (createdItem != null) {
-                                                eventos = eventos + Evento(
-                                                    id = createdItem.id_calendario,
-                                                    data = dataSelecionada!!,
-                                                    descricao = novaDescricao,
-                                                    link = novoLink,
-                                                    grupoId = grupoId
-                                                )
-                                            }
+                                            Toast.makeText(context, "Evento criado!", Toast.LENGTH_SHORT).show()
+
+                                            // Cria evento localmente usando os dados enviados
+                                            val novaData = dataSelecionada!!
+                                            eventos = eventos + Evento(
+                                                id = (eventos.maxOfOrNull { it.id } ?: 0) + 1, // ID temporário
+                                                data = novaData,
+                                                descricao = novoNome,
+                                                link = novoLink,
+                                                grupoId = grupoId
+                                            )
 
                                             // Limpa campos
                                             novoNome = ""
                                             novaDescricao = ""
                                             novoLink = ""
                                             novaHora = ""
+                                        } else {
+                                            Toast.makeText(context, "Erro: ${response.code()}", Toast.LENGTH_SHORT).show()
                                         }
                                     }
 
                                     override fun onFailure(call: retrofit2.Call<CalendarioResponseWrapper>, t: Throwable) {
-                                        println("⚠️ Falha ao conectar ao backend: ${t.message}")
+                                        Toast.makeText(context, "Erro ao criar evento: ${t.message}", Toast.LENGTH_LONG).show()
                                     }
                                 })
-
                         }
                     }, modifier = Modifier.fillMaxWidth()) {
                         Text("Salvar evento")
                     }
+
 
 
                 }

@@ -173,13 +173,16 @@ fun AppContent() {
                     val grupoId = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
                     GrupoInfo(navController = navController, grupoId = grupoId)
                 }
-                composable("home_grupo/{grupoId}") { backStackEntry ->
+                composable("home_grupo/{grupoId}/{idUsuario}") { backStackEntry ->
                     val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
-                    HomeGrupo(navController = navController, grupoId = grupoId)
+                    val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull() ?: 0
+                    HomeGrupo(navController = navController, grupoId = grupoId, idUsuario = idUsuario)
                 }
-                composable("calendario/{grupoId}") { backStackEntry ->
+
+                composable("calendario/{grupoId}/{idUsuario}") { backStackEntry ->
                     val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
-                    Calendario(navController = navController, grupoId = grupoId)
+                    val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull() ?: 0
+                    Calendario(navController = navController, grupoId = grupoId, idUsuario = idUsuario)
                 }
                 composable("chat_grupo/{grupoId}") { backStackEntry ->
                     val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
