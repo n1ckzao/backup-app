@@ -75,19 +75,24 @@ fun TelaEbooksScreen(
                             .clickable { onEbookClick(index) },
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F1FF))
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(12.dp)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp), // altura do card
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(120.dp)
-                                    .background(PrimaryPurple, shape = RoundedCornerShape(8.dp))
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text("E-book $index", fontSize = 16.sp, color = Color.Black)
-                            Text("R$ ${index * 10},00", color = PrimaryPurple, fontSize = 14.sp)
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(120.dp)
+                                        .background(PrimaryPurple, shape = RoundedCornerShape(8.dp))
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text("E-book $index", fontSize = 16.sp, color = Color.Black)
+                                Text("R$ ${index * 10},00", color = PrimaryPurple, fontSize = 14.sp)
+                            }
                         }
                     }
                 }

@@ -139,3 +139,17 @@ fun CadastrarEbookScreen(onCancelar: () -> Unit, onPublicar: () -> Unit) {
         }
     }
 }
+
+@Composable
+fun ConfirmDialog(text: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text, color = PrimaryPurple) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text("Sim", color = PrimaryPurple) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Não", color = Color.Gray) }
+        }
+    )
+}
