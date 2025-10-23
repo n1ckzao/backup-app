@@ -56,7 +56,7 @@ fun DrawerMenu(
             DrawerItem(
                 text = "E-Books",
                 icon = Icons.Default.Info,
-                onClick = { onOptionSelected("E-Books") }
+                onClick = { onOptionSelected("ebooks") }
             )
 
             Spacer(modifier = Modifier.weight(1f))

@@ -92,7 +92,7 @@ fun MeusGrupos(navController: NavHostController) {
                             modifier = Modifier.fillMaxHeight()
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Journey", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text("Meus Grupos", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF351D9B))

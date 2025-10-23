@@ -30,8 +30,14 @@ interface GrupoService {
     @GET("usuario/{id}/grupos-participando")
     fun listarGruposParticipando(@Path("id") idUsuario: Int): Call<GruposResult>
 
+    @GET("usuario/{id}/grupos-criados")
+    fun listarGruposCriados(@Path("id") idUsuario: Int): Call<GruposResult>
+
+
     @GET("user/{id}/groups")
     fun getGruposDoUsuario(@Path("id") idUsuario: Int): Call<GruposResult>
+
+
 
 
 

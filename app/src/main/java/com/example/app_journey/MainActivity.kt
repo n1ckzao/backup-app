@@ -87,7 +87,7 @@ fun AppContent() {
     val rotaAtual = navBackStackEntry.value?.destination?.route
 
     // Rotas que exibem AppBar + Drawer
-    val rotasComBarra = listOf("profile", "home", "criar_grupo", "editar_info/{idUsuario}", "meus_grupos")
+    val rotasComBarra = listOf("profile", "home", "criar_grupo", "editar_info/{idUsuario}", "meus_grupos", "ebooks")
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -115,7 +115,9 @@ fun AppContent() {
                                         .clip(CircleShape)
                                         .clickable {
                                             navController.navigate("home") {
-                                                popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                                                popUpTo(navController.graph.startDestinationId) {
+                                                    inclusive = false
+                                                }
                                             }
                                         }
                                 ) {
@@ -159,21 +161,30 @@ fun AppContent() {
                 composable("profile") { Perfil(navController) }
                 composable("criar_grupo") { CriarGrupo(navegacao = navController) }
                 composable("meus_grupos") { MeusGrupos(navController) }
+
+                composable("editar_info/{idUsuario}") { backStackEntry ->
+                    val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
+                    EditarInfoWrapper(navController, idUsuario)
+                }//edição do perfil
+
                 composable(
                     route = "grupoinfo/{id}",
                 ) { backStackEntry ->
                     val grupoId = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
                     GrupoInfo(navController = navController, grupoId = grupoId)
                 }
+                composable("home_grupo/{grupoId}") { backStackEntry ->
+                    val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
+                    HomeGrupo(navController = navController, grupoId = grupoId)
+                }
                 composable("calendario/{grupoId}") { backStackEntry ->
                     val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
                     Calendario(navController = navController, grupoId = grupoId)
                 }
-
-                composable("editar_info/{idUsuario}") { backStackEntry ->
-                    val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
-                    EditarInfoWrapper(navController, idUsuario)
-                }//edição do perfil
+                composable("chat_grupo/{grupoId}") { backStackEntry ->
+                    val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
+                    ChatGrupo(navController = navController, grupoId = grupoId)
+                }
 
                 composable("verificar_email/{email}") { backStackEntry ->
                     val email = backStackEntry.arguments?.getString("email")
@@ -183,6 +194,56 @@ fun AppContent() {
                 composable("redefinir_senha/{idUsuario}") { backStackEntry ->
                     val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
                     idUsuario?.let { RedefinirSenha(navController, it) }
+                }
+
+                //Ebooks
+
+                // Tela inicial: lista de e-books
+                composable("ebooks") {
+                    TelaEbooksScreen(
+                        onEbookClick = { id ->
+                            navController.navigate("ebook_detalhe/$id")
+                        },
+                        onCriarClick = {
+                            navController.navigate("ebook_cadastrar")
+                        },
+                        onCarrinhoClick = {
+                            navController.navigate("ebook_carrinho")
+                        }
+                    )
+                }
+
+                // Cadastro de e-book
+                composable("ebook_cadastrar") {
+                    CadastrarEbookScreen(
+                        onCancelar = { navController.popBackStack() },
+                        onPublicar = {
+                            navController.navigate("ebook_confirmar_publicacao")
+                        }
+                    )
+                }
+
+                // Detalhe do e-book
+                composable("ebook_detalhe/{id}") { backStackEntry ->
+                    val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
+                    DetalheEbookScreen(
+                        onAdicionarCarrinho = {
+                            navController.navigate("ebook_carrinho")
+                        },
+                        onVoltar = { navController.popBackStack() }
+                    )
+                }
+
+                // Tela do carrinho
+                composable("ebook_carrinho") {
+                    CarrinhoScreen(
+                        onFinalizar = {
+                            navController.navigate("ebooks") {
+                                popUpTo("ebooks") { inclusive = true }
+                            }
+                        },
+                        onVoltar = { navController.popBackStack() }
+                    )
                 }
                 }
             }

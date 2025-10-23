@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -95,14 +97,12 @@ fun GrupoInfo(
     ) {
         // Header Voltar
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-            Icon(
-                painter = painterResource(id = R.drawable.logoclaro),
-                contentDescription = "Voltar",
-                tint = Color(0xFF341E9B),
-                modifier = Modifier
-                    .size(28.dp)
-                    .clickable { navController.popBackStack() }
-            )
+            IconButton(onClick = { navController.popBackStack() }) {
+                Icon(Icons.Default.ArrowBack,
+                    contentDescription = "Voltar",
+                    tint = Color(0xFF341E9B
+                    ))
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -152,36 +152,6 @@ fun GrupoInfo(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Button(
-                        onClick = { /* Chat */ },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
-                        shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF341E9B))
-                    ) {
-                        Text("Chat", color = Color.White, fontSize = 16.sp)
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Button(
-                        onClick = {
-                            navController.navigate("calendario/${grupoId}")
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(48.dp),
-                        shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF341E9B))
-                    ) {
-                        Text("Calendário", color = Color.White, fontSize = 16.sp)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
                 // Botão Participar
                 Button(
                     onClick = {
@@ -194,19 +164,53 @@ fun GrupoInfo(
                         scope.launch {
                             carregando = true
                             try {
+                                // 🔍 Verifica se o usuário já participa ou criou o grupo
+                                val (jaParticipa, criouGrupo) = withContext(Dispatchers.IO) {
+                                    var participa = false
+                                    var criou = false
+
+                                    try {
+                                        val respParticipa = RetrofitInstance.grupoService
+                                            .listarGruposParticipando(idUsuario)
+                                            .execute()
+                                        if (respParticipa.isSuccessful) {
+                                            val grupos = respParticipa.body()?.grupos ?: emptyList()
+                                            participa = grupos.any { it.id_grupo == idGrupo }
+                                        }
+
+                                        val respCriou = RetrofitInstance.grupoService
+                                            .listarGruposCriados(idUsuario)
+                                            .execute()
+                                        if (respCriou.isSuccessful) {
+                                            val grupos = respCriou.body()?.grupos ?: emptyList()
+                                            criou = grupos.any { it.id_grupo == idGrupo }
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("GrupoInfo", "Erro ao verificar participação/criação: ${e.localizedMessage}")
+                                    }
+
+                                    Pair(participa, criou)
+                                }
+
+                                if (jaParticipa || criouGrupo) {
+                                    Log.d("GrupoInfo", "✅ Usuário já participa ou criou o grupo")
+                                    navController.navigate("home_grupo/${grupoId}")
+                                    return@launch
+                                }
+
+                                // 🟣 Caso contrário, faz o POST para participar
                                 Log.d("GrupoInfo", "➡️ POST grupo ${grupo!!.id_grupo} com id_usuario=$idUsuario")
                                 val response = withContext(Dispatchers.IO) {
                                     RetrofitInstance.grupoService
                                         .participarDoGrupo(grupo!!.id_grupo, mapOf("id_usuario" to idUsuario))
                                         .execute()
                                 }
-                                Log.d("GrupoInfo", "⬅️ HTTP: ${response.code()}")
-                                Log.d("GrupoInfo", "⬅️ Corpo: ${response.body()}")
 
+                                Log.d("GrupoInfo", "⬅️ HTTP: ${response.code()}")
                                 if (response.isSuccessful && (response.body()?.status == true || response.code() in 200..299)) {
                                     participando = true
                                     Toast.makeText(context, "Você agora participa do grupo!", Toast.LENGTH_SHORT).show()
-                                    navController.popBackStack()
+                                    navController.navigate("home_grupo/${grupoId}")
                                 } else {
                                     Toast.makeText(context, "Erro ao entrar no grupo", Toast.LENGTH_SHORT).show()
                                 }
@@ -219,9 +223,11 @@ fun GrupoInfo(
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    enabled = !participando && !carregando,
+                    enabled = !carregando,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (participando) Color(0xFF4CAF50) else Color(0xFF6750A4)
                     )
@@ -237,6 +243,7 @@ fun GrupoInfo(
                         color = Color.White
                     )
                 }
+
             }
         }
     }
