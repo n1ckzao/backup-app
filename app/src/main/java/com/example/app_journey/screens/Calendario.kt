@@ -25,15 +25,21 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.*
 import android.widget.Toast
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.LocalContext
 
 data class Evento(
     val id: Int,
     val data: LocalDate,
+    val nome: String,
     val descricao: String,
+    val hora: String?,
     val link: String,
     val grupoId: Int
 )
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,10 +78,13 @@ fun Calendario(
                         eventos = body.Calendario.mapNotNull { item ->
                             try {
                                 val data = LocalDate.parse(item.data_evento.substring(0, 10))
+                                val hora = item.data_evento.substring(11, 16)
                                 Evento(
                                     id = item.id_calendario,
                                     data = data,
+                                    nome = item.nome_evento,
                                     descricao = item.descricao,
+                                    hora = hora,
                                     link = item.link,
                                     grupoId = item.id_grupo
                                 )
@@ -180,13 +189,17 @@ fun Calendario(
             }
         }
 
-        // 2️⃣ Bottom sheet que abre somente ao clicar no dia
         if (dataSelecionada != null) {
             ModalBottomSheet(
                 onDismissRequest = { dataSelecionada = null },
-                sheetState = sheetState
+                sheetState = sheetState,
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .imePadding()
+                ) {
                     Text(
                         text = "Eventos de ${dataSelecionada!!.dayOfMonth}/${dataSelecionada!!.monthValue}/${dataSelecionada!!.year}",
                         fontWeight = FontWeight.Bold,
@@ -201,79 +214,130 @@ fun Calendario(
                         Text("Nenhum evento", color = Color.Gray)
                     } else {
                         eventosDoDia.forEach { evento ->
-                            Row(
+                            var mostrarConfirmacao by remember { mutableStateOf(false) }
+
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(vertical = 6.dp)
                             ) {
-                                Text(text = "- ${evento.descricao}", modifier = Modifier.weight(1f))
-                                var mostrarConfirmacao by remember { mutableStateOf(false) }
-
-                                IconButton(onClick = { mostrarConfirmacao = true }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Excluir evento",
-                                        tint = Color.Red
-                                    )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("• ${evento.nome}", fontWeight = FontWeight.Bold)
+                                    IconButton(onClick = { mostrarConfirmacao = true }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Excluir evento",
+                                            tint = Color.Red
+                                        )
+                                    }
                                 }
 
-                                if (mostrarConfirmacao) {
-                                    AlertDialog(
-                                        onDismissRequest = { mostrarConfirmacao = false },
-                                        title = { Text("Excluir evento") },
-                                        text = { Text("Tem certeza que deseja excluir este evento?") },
-                                        confirmButton = {
-                                            TextButton(onClick = {
-                                                mostrarConfirmacao = false
-                                                RetrofitInstance.calendarioService
-                                                    .deleteEventoPorId(evento.id)
-                                                    .enqueue(object : retrofit2.Callback<Void> {
-                                                        override fun onResponse(
-                                                            call: retrofit2.Call<Void>,
-                                                            response: retrofit2.Response<Void>
-                                                        ) {
-                                                            if (response.isSuccessful) {
-                                                                println("✅ Evento ${evento.id} deletado com sucesso!")
-                                                                Toast.makeText(context, "Evento excluído", Toast.LENGTH_SHORT).show()
-                                                                // Atualiza lista e força recomposição
-                                                                eventos = eventos.filterNot { it.id == evento.id }
-                                                            } else {
-                                                                println("❌ Erro ao deletar evento: ${response.code()} - ${response.message()}")
-                                                                Toast.makeText(context, "Erro ao excluir: ${response.code()}", Toast.LENGTH_LONG).show()
-                                                            }
-                                                        }
+                                // Exibe os detalhes do evento
+                                Text("Descrição: ${evento.descricao}", style = MaterialTheme.typography.bodySmall)
+                                if (!evento.hora.isNullOrBlank())
+                                    Text("Hora: ${evento.hora}", style = MaterialTheme.typography.bodySmall)
+                                if (evento.link.isNotBlank())
+                                    Text(
+                                        "Link: ${evento.link}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF341E9B)
+                                    )
 
-                                                        override fun onFailure(call: retrofit2.Call<Void>, t: Throwable) {
-                                                            println("⚠️ Falha ao deletar evento: ${t.message}")
-                                                            Toast.makeText(context, "Falha ao excluir: ${t.message}", Toast.LENGTH_LONG).show()
+                                Divider(color = Color.LightGray)
+                            }
+
+                            if (mostrarConfirmacao) {
+                                AlertDialog(
+                                    onDismissRequest = { mostrarConfirmacao = false },
+                                    title = { Text("Excluir evento") },
+                                    text = { Text("Tem certeza que deseja excluir este evento?") },
+                                    confirmButton = {
+                                        TextButton(onClick = {
+                                            mostrarConfirmacao = false
+                                            RetrofitInstance.calendarioService
+                                                .deleteEventoPorId(evento.id)
+                                                .enqueue(object : retrofit2.Callback<Void> {
+                                                    override fun onResponse(
+                                                        call: retrofit2.Call<Void>,
+                                                        response: retrofit2.Response<Void>
+                                                    ) {
+                                                        if (response.isSuccessful) {
+                                                            println("✅ Evento ${evento.id} deletado com sucesso!")
+                                                            Toast.makeText(context, "Evento excluído", Toast.LENGTH_SHORT).show()
+                                                            eventos = eventos.filterNot { it.id == evento.id }
+                                                        } else {
+                                                            println("❌ Erro ao deletar evento: ${response.code()} - ${response.message()}")
+                                                            Toast.makeText(context, "Erro ao excluir: ${response.code()}", Toast.LENGTH_LONG).show()
                                                         }
-                                                    })
-                                            }) { Text("Sim") }
-                                        },
-                                        dismissButton = {
-                                            TextButton(onClick = { mostrarConfirmacao = false }) {
-                                                Text("Cancelar")
-                                            }
+                                                    }
+
+                                                    override fun onFailure(call: retrofit2.Call<Void>, t: Throwable) {
+                                                        println("⚠️ Falha ao deletar evento: ${t.message}")
+                                                        Toast.makeText(context, "Falha ao excluir: ${t.message}", Toast.LENGTH_LONG).show()
+                                                    }
+                                                })
+                                        }) { Text("Sim") }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { mostrarConfirmacao = false }) {
+                                            Text("Cancelar")
                                         }
-                                    )
-                                }
+                                    }
+                                )
                             }
                         }
                     }
+
+
 
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Criar novo evento", fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    OutlinedTextField(value = novoNome, onValueChange = { novoNome = it }, label = { Text("Nome") }, modifier = Modifier.fillMaxWidth())
+                    val cornerRadius = 32.dp
+
+                    OutlinedTextField(
+                        value = novoNome,
+                        onValueChange = { novoNome = it },
+                        label = { Text("Nome") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(cornerRadius)
+                    )
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(value = novaDescricao, onValueChange = { novaDescricao = it }, label = { Text("Descrição") }, modifier = Modifier.fillMaxWidth())
+
+                    OutlinedTextField(
+                        value = novaDescricao,
+                        onValueChange = { novaDescricao = it },
+                        label = { Text("Descrição") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(cornerRadius)
+                    )
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(value = novaHora, onValueChange = { novaHora = it }, label = { Text("Hora (HH:mm)") }, modifier = Modifier.fillMaxWidth())
+
+                    OutlinedTextField(
+                        value = novaHora,
+                        onValueChange = { novaHora = it },
+                        label = { Text("Hora (HH:mm)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(cornerRadius)
+                    )
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(value = novoLink, onValueChange = { novoLink = it }, label = { Text("Link") }, modifier = Modifier.fillMaxWidth())
+
+                    OutlinedTextField(
+                        value = novoLink,
+                        onValueChange = { novoLink = it },
+                        label = { Text("Link") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(cornerRadius)
+                    )
+
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = {
                         if (novoNome.isNotBlank() && novaDescricao.isNotBlank()) {
@@ -299,12 +363,15 @@ fun Calendario(
                                             // Cria evento localmente usando os dados enviados
                                             val novaData = dataSelecionada!!
                                             eventos = eventos + Evento(
-                                                id = (eventos.maxOfOrNull { it.id } ?: 0) + 1, // ID temporário
+                                                id = (eventos.maxOfOrNull { it.id } ?: 0) + 1,
                                                 data = novaData,
-                                                descricao = novoNome,
+                                                nome = novoNome,
+                                                descricao = novaDescricao,
+                                                hora = novaHora,
                                                 link = novoLink,
                                                 grupoId = grupoId
                                             )
+
 
                                             // Limpa campos
                                             novoNome = ""

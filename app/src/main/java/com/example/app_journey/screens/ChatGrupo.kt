@@ -134,7 +134,6 @@ fun ChatGrupo(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFEDEEFF))
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
