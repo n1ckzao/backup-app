@@ -150,10 +150,11 @@ fun AppContent() {
         ) { paddingValues ->
             NavHost(
                 navController = navController,
-                startDestination = "login",
+                startDestination = "tela_inicial",
                 modifier = Modifier.padding(paddingValues)
             ) {
                 // Rotas existentes
+                composable("tela_inicial") { TelaInicial(navController) }
                 composable("login") { Login(navController) }
                 composable("cadastro") { Cadastro(navController) }
                 composable("recuperacao_senha") { RecuperacaoSenha(navController) }
@@ -184,6 +185,12 @@ fun AppContent() {
                     val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull() ?: 0
                     Calendario(navController = navController, grupoId = grupoId, idUsuario = idUsuario)
                 }
+                composable("meu_calendario") {
+                    val context = LocalContext.current
+                    val idUsuario = SharedPrefHelper.recuperarIdUsuario(context) ?: -1
+                    CalendarioPessoal(navController = navController, idUsuario = idUsuario)
+                }
+
                 composable("chat_grupo/{grupoId}") { backStackEntry ->
                     val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
                     ChatGrupo(navController = navController, grupoId = grupoId)

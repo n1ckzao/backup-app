@@ -3,6 +3,7 @@ package com.example.app_journey.screens
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -120,7 +121,11 @@ fun MeusGrupos(navController: NavHostController) {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(100.dp),
+                                .height(100.dp)
+                                .clickable {
+                                    // 🟣 Ação ao clicar no grupo
+                                    navController.navigate("grupoInfo/${grupo.id_grupo}")
+                                },
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF351D9B))
                         ) {

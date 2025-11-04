@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
@@ -47,6 +48,11 @@ fun DrawerMenu(
                 text = "Meus Grupos",
                 icon = Icons.Default.Person,
                 onClick = { onOptionSelected("meus_grupos") }
+            )
+            DrawerItem(
+                text = "Meu Calendário",
+                icon = Icons.Default.DateRange,
+                onClick = { onOptionSelected("meu_calendario") }
             )
             DrawerItem(
                 text = "Chats",
