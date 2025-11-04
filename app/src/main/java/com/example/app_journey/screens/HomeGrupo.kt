@@ -106,13 +106,7 @@ fun HomeGrupo(
 
                         Column {
                             Text(text = nome, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                            val membrosAtuais = grupo?.membros_atuais ?: 0
-                            Text(
-                                text = "Membros: $membrosAtuais / $membros",
-                                color = Color.Gray,
-                                fontSize = 15.sp
-                            )
-
+                            Text(text = "$membros membros", color = Color.Gray, fontSize = 15.sp)
                         }
                     }
 

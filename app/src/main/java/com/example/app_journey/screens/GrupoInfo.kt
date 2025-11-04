@@ -135,13 +135,7 @@ fun GrupoInfo(
 
                     Column {
                         Text(text = nome, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E1E1E))
-                        val membrosAtuais = grupo?.membros_atuais ?: 0
-                        Text(
-                            text = "Membros: $membrosAtuais / $membros",
-                            color = Color.Gray,
-                            fontSize = 15.sp
-                        )
-
+                        Text(text = "$membros membros", color = Color.Gray, fontSize = 15.sp)
                     }
                 }
 
