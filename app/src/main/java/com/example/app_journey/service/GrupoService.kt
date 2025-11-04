@@ -4,6 +4,7 @@ import com.example.app_journey.model.ApiResponse
 import com.example.app_journey.model.Grupo
 import com.example.app_journey.model.GrupoWrapper
 import com.example.app_journey.model.GruposResult
+import com.example.app_journey.model.Usuario
 import retrofit2.Call
 import retrofit2.http.*
 
@@ -38,6 +39,12 @@ interface GrupoService {
     fun getGruposDoUsuario(@Path("id") idUsuario: Int): Call<GruposResult>
 
 
+    @Headers("Content-Type: application/json")
+    @PUT("usuario/{id}")
+    fun atualizarUsuarioPorId(
+        @Path("id") id: Int,
+        @Body usuarioAtualizado: Usuario
+    ): Call<Usuario>
 
 
 

@@ -1,12 +1,19 @@
 package com.example.app_journey.screens
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,9 +29,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberAsyncImagePainter
+import com.example.app_journey.model.Grupo
 import com.example.app_journey.model.GruposResult
 import com.example.app_journey.service.RetrofitFactory
+import com.example.app_journey.utils.AzureUploader
 import com.example.app_journey.utils.SharedPrefHelper
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -31,220 +43,273 @@ import retrofit2.Response
 @Composable
 fun CriarGrupo(navegacao: NavHostController) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var nome by remember { mutableStateOf("") }
-    var id_area by remember { mutableStateOf("") }
+    var id_area by remember { mutableStateOf<Int?>(null) } // agora é Int
+
     var limite by remember { mutableStateOf("") }
     var descricao by remember { mutableStateOf("") }
-    var imagem by remember { mutableStateOf("") }
+    var imagemUri by remember { mutableStateOf<Uri?>(null) }
+    var imagemUrl by remember { mutableStateOf<String?>(null) }
     val id_usuario = SharedPrefHelper.recuperarIdUsuario(context) ?: -1
 
     var mensagem by remember { mutableStateOf("") }
+    var enviando by remember { mutableStateOf(false) }
 
-    Column(
+    // --- Dropdown de áreas ---
+    val areas = remember { mutableStateListOf<com.example.app_journey.model.Area>() }
+    var areaSelecionada by remember { mutableStateOf<com.example.app_journey.model.Area?>(null) }
+    var expandedArea by remember { mutableStateOf(false) }
+
+    // Carregar áreas do backend
+    LaunchedEffect(Unit) {
+        RetrofitFactory().getAreaService().listarAreas()
+            .enqueue(object : Callback<com.example.app_journey.model.AreaResult> {
+                override fun onResponse(
+                    call: Call<com.example.app_journey.model.AreaResult>,
+                    response: Response<com.example.app_journey.model.AreaResult>
+                ) {
+                    if (response.isSuccessful) {
+                        response.body()?.areas?.let {
+                            areas.clear()
+                            areas.addAll(it)
+                        }
+                    } else {
+                        Toast.makeText(context, "Erro ao carregar áreas: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<com.example.app_journey.model.AreaResult>, t: Throwable) {
+                    Toast.makeText(context, "Erro ao carregar áreas: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        imagemUri = uri
+        uri?.let {
+            scope.launch {
+                enviando = true
+                val inputStream = context.contentResolver.openInputStream(it)
+                val fileName = "imagem_${System.currentTimeMillis()}.jpg"
+                if (inputStream != null) {
+                    val url = AzureUploader.uploadImageToAzure(inputStream, fileName)
+                    if (url != null) {
+                        imagemUrl = url
+                        Toast.makeText(context, "Imagem enviada com sucesso!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Falha no upload da imagem", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                enviando = false
+            }
+        }
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
             .background(Color(0xFFD9DCFC))
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            "Crie Seu Grupo no JOURNEY!",
-            style = MaterialTheme.typography.headlineSmall,
-            color = Color(0xFF4D35BC),
-            fontWeight = FontWeight.Bold
-        )
-
-        Box(
+        Column(
             modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFF351D9B))
-                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            Column(
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            Text(
+                "Crie seu Grupo no JOURNEY!",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF341E9B)
+            )
+
+            Box(
                 modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color(0xFF351D9B))
+                    .padding(20.dp)
                     .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
 
-                // Nome do Grupo
-                Text("Nome do Grupo:", color = Color.White, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
-                    value = nome,
-                    onValueChange = { nome = it },
-                    placeholder = { Text("Digite o Nome do Grupo") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = Color.White,
-                        focusedPlaceholderColor = Color.LightGray,
-                        unfocusedPlaceholderColor = Color.LightGray,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent
-                    )
-                )
+                    // Botão Voltar
+                    Button(
+                        onClick = { navegacao.navigate("home") },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEDEBFF)),
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.height(40.dp)
+                    ) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color(0xFF341E9B))
+                        Text("  Voltar", color = Color(0xFF341E9B), fontWeight = FontWeight.Bold)
+                    }
 
-                // Área
-                Text("Área Específica:", color = Color.White, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
-                    value = id_area,
-                    onValueChange = { id_area = it },
-                    placeholder = { Text("Digite a categoria") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = Color.White,
-                        focusedPlaceholderColor = Color.LightGray,
-                        unfocusedPlaceholderColor = Color.LightGray,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent
-                    )
-                )
+                    CampoTexto("Nome do Grupo:", nome) { nome = it }
 
-                // Limite de Membros
-                Text("Limite de Membros:", color = Color.White, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
-                    value = limite,
-                    onValueChange = { limite = it.filter { c -> c.isDigit() } },
-                    placeholder = { Text("Máximo 30 Participantes") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = Color.White,
-                        focusedPlaceholderColor = Color.LightGray,
-                        unfocusedPlaceholderColor = Color.LightGray,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent
-                    )
-                )
-
-                // Descrição
-                Text("Descrição:", color = Color.White, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
-                    value = descricao,
-                    onValueChange = { descricao = it },
-                    placeholder = { Text("Digite a descrição") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = Color.White,
-                        focusedPlaceholderColor = Color.LightGray,
-                        unfocusedPlaceholderColor = Color.LightGray,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent
-                    )
-                )
-
-                // Imagem
-                Text("Enviar foto:", color = Color.White, fontWeight = FontWeight.Bold)
-                OutlinedTextField(
-                    value = imagem,
-                    onValueChange = { imagem = it },
-                    placeholder = { Text("URL da imagem") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = Color.White,
-                        focusedPlaceholderColor = Color.LightGray,
-                        unfocusedPlaceholderColor = Color.LightGray,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Botão criar
-                Button(
-                    onClick = {
-                        if (nome.isBlank() || id_area.isBlank() || limite.isBlank() || descricao.isBlank() || imagem.isBlank()) {
-                            mensagem = "Preencha todos os campos"
-                            return@Button
+                    // Dropdown de Áreas
+                    Text("Área Específica:", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Box {
+                        Button(
+                            onClick = { expandedArea = !expandedArea },
+                            shape = RoundedCornerShape(33.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A33C3)),
+                            modifier = Modifier.fillMaxWidth().height(55.dp)
+                        ) {
+                            Text(
+                                areaSelecionada?.area ?: "Selecione a área",
+                                color = Color.White,
+                                fontSize = 16.sp
+                            )
                         }
 
-                        val grupoService = RetrofitFactory().getGrupoService()
-                        val novoGrupo = com.example.app_journey.model.Grupo(
-                            nome = nome,
-                            limite_membros = limite.toInt(),
-                            descricao = descricao,
-                            imagem = imagem,
-                            id_area = id_area,
-                            id_usuario = id_usuario
-                        )
+                        DropdownMenu(
+                            expanded = expandedArea,
+                            onDismissRequest = { expandedArea = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            areas.forEach { area ->
+                                DropdownMenuItem(
+                                    text = { Text(area.area) },
+                                    onClick = {
+                                        areaSelecionada = area
+                                        id_area = area.id_area
+                                        expandedArea = false
+                                    }
+                                )
+                            }
+                        }
+                    }
 
-                        grupoService.inserirGrupo(novoGrupo).enqueue(object : Callback<GruposResult> {
-                            override fun onResponse(
-                                call: Call<GruposResult>,
-                                response: Response<GruposResult>
-                            ) {
-                                if (response.isSuccessful && response.body()?.status == true) {
-                                    Toast.makeText(context, "Grupo criado com sucesso!", Toast.LENGTH_SHORT).show()
-                                    navegacao.navigate("home")
-                                } else {
-                                    mensagem = "Erro ao criar grupo: ${response.code()}"
+                    CampoTexto("Limite de Membros (máx.):", limite.filter { c -> c.isDigit() }) { limite = it }
+                    CampoTexto("Descrição:", descricao) { descricao = it }
+
+                    Text("Imagem do Grupo:", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color(0xFF4A33C3))
+                            .clickable { launcher.launch("image/*") },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (imagemUrl != null) {
+                            Image(
+                                painter = rememberAsyncImagePainter(imagemUrl),
+                                contentDescription = "Imagem selecionada",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                "📁 Selecionar Imagem",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontStyle = FontStyle.Italic
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            if (nome.isBlank() || id_area == null || limite.isBlank() || descricao.isBlank() || imagemUrl == null) {
+                                mensagem = "Preencha todos os campos e envie uma imagem"
+                                return@Button
+                            }
+
+                            val novoGrupo = Grupo(
+                                id_grupo = 0,
+                                nome = nome,
+                                limite_membros = limite.toInt(),
+                                descricao = descricao,
+                                imagem = imagemUrl!!,
+                                id_area = id_area!!,
+                                id_usuario = id_usuario
+                            )
+
+                            val grupoService = RetrofitFactory().getGrupoService()
+                            grupoService.inserirGrupo(novoGrupo).enqueue(object : Callback<GruposResult> {
+                                override fun onResponse(call: Call<GruposResult>, response: Response<GruposResult>) {
+                                    if (response.isSuccessful && response.body()?.status == true) {
+                                        Toast.makeText(context, "Grupo criado com sucesso!", Toast.LENGTH_SHORT).show()
+                                        navegacao.navigate("home")
+                                    } else {
+                                        mensagem = "Erro ao criar grupo: ${response.code()}"
+                                    }
                                 }
-                            }
 
-                            override fun onFailure(call: Call<com.example.app_journey.model.GruposResult>, t: Throwable) {
-                                mensagem = "Erro de rede: ${t.message}"
-                            }
-                        })
-                    },
-                    shape = RoundedCornerShape(50),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB8BDFA))
-                ) {
-                    Text(
-                        "Criar Grupo",
-                        color = Color(0xFF341E9B),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
+                                override fun onFailure(call: Call<GruposResult>, t: Throwable) {
+                                    mensagem = "Erro de rede: ${t.message}"
+                                }
+                            })
+                        },
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEDEBFF)),
+                        modifier = Modifier.fillMaxWidth().height(55.dp)
+                    ) {
+                        Text(
+                            "➕ Criar Grupo",
+                            color = Color(0xFF341E9B),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                    }
 
-                if (mensagem.isNotEmpty()) {
-                    Text(mensagem, color = Color.Red, fontSize = 14.sp)
+                    if (mensagem.isNotEmpty()) {
+                        Text(mensagem, color = Color.Red, fontSize = 14.sp)
+                    }
                 }
+            }
+        }
+
+        if (enviando) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0x80000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
             }
         }
     }
 }
-
-
-
-
-@Preview
 @Composable
-private fun Preview() {
+fun CampoTexto(label: String, valor: String, aoMudar: (String) -> Unit) {
+    Column {
+        Text(label, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        OutlinedTextField(
+            value = valor,
+            onValueChange = aoMudar,
+            shape = RoundedCornerShape(33.dp),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                cursorColor = Color.White,
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.Gray,
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent
+            )
+        )
+    }
+}
+
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewCriarGrupoBonito() {
     val fakeNav = rememberNavController()
-    CriarGrupo(navegacao = fakeNav)
+    CriarGrupo(fakeNav)
 }

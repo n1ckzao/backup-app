@@ -20,6 +20,6 @@ data class Grupo(
     val limite_membros: Int,
     val descricao: String,
     val imagem: String?,
-    val id_area: String,
+    val id_area: Int,
     val id_usuario: Int
 )

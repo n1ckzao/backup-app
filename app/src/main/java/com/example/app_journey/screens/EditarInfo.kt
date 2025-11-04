@@ -32,6 +32,7 @@ import com.example.app_journey.model.Usuario
 import com.example.app_journey.service.RetrofitInstance
 import com.example.app_journey.ui.theme.*
 import com.example.app_journey.utils.AzureUploader
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
@@ -238,38 +239,52 @@ fun EditarInfo(
 
                 Button(
                     onClick = {
+                        val userId = usuario.id_usuario
+                        if (userId == null) {
+                            Toast.makeText(context, "ID de usuário inválido", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val gson = Gson()
+
                         val usuarioAtualizado = usuario.copy(
                             nome_completo = nome,
                             email = email,
-                            data_nascimento = dataNascimento.take(10),
+                            data_nascimento = dataNascimento.takeIf { it.isNotBlank() },
                             foto_perfil = imagemUrl,
                             descricao = descricao,
-                            senha = if (senha.isNotBlank()) senha else usuario.senha,
+                            senha = if (senha.isNotBlank()) senha else usuario.senha ?: "",
                             tipo_usuario = tipoUsuario
                         )
+                        val usuarioJson = gson.toJson(usuarioAtualizado)
 
-                        RetrofitInstance.usuarioService
-                            .atualizarUsuarioPorId(usuario.id_usuario, usuarioAtualizado)
-                            .enqueue(object : Callback<Usuario> {
-                                override fun onResponse(
-                                    call: Call<Usuario>,
-                                    response: Response<Usuario>
-                                ) {
-                                    if (response.isSuccessful) {
-                                        onSave(usuarioAtualizado)
-                                        navController.previousBackStackEntry
-                                            ?.savedStateHandle
-                                            ?.set("usuarioAtualizado", usuarioAtualizado)
-                                        navController.popBackStack()
-                                    } else {
-                                        Toast.makeText(context, "Erro ao atualizar (${response.code()})", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                        scope.launch {
+                            try {
+                                RetrofitInstance.usuarioService
+                                    .atualizarUsuarioPorId(userId, usuarioAtualizado)
+                                    .enqueue(object : Callback<Usuario> {
+                                        override fun onResponse(call: Call<Usuario>, response: Response<Usuario>) {
+                                            if (response.isSuccessful) {
+                                                onSave(usuarioAtualizado)
 
-                                override fun onFailure(call: Call<Usuario>, t: Throwable) {
-                                    Toast.makeText(context, "Falha: ${t.message}", Toast.LENGTH_SHORT).show()
-                                }
-                            })
+                                                navController.previousBackStackEntry
+                                                    ?.savedStateHandle
+                                                    ?.set("usuarioAtualizado", usuarioJson)
+                                                navController.popBackStack()
+                                            } else {
+                                                val errorBody = response.errorBody()?.string()
+                                                Toast.makeText(context, "Erro ${response.code()}: $errorBody", Toast.LENGTH_LONG).show()
+                                                println("Erro PUT: $errorBody")
+                                            }
+                                        }
+
+                                        override fun onFailure(call: Call<Usuario>, t: Throwable) {
+                                            Toast.makeText(context, "Falha: ${t.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    })
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Erro inesperado: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PurpleLighter)
