@@ -1,6 +1,7 @@
 package com.example.app_journey.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,26 +25,32 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 
-data class Mensagem(
+data class MensagemUI(
     val id: Int,
     val texto: String,
     val remetente: String,
+    val idRemetente: Int,
     val isUser: Boolean
 )
+
+
 
 @Composable
 fun ChatGrupo(
     navController: NavHostController,
-    grupoId: Int
-) {
+    grupoId: Int,
+    idUsuarioAtual: Int
+)
+ {
     var mensagens by remember {
         mutableStateOf(
             listOf(
-                Mensagem(1, "Olá pessoal!", "Maria", false),
-                Mensagem(2, "Oi Maria, tudo bem?", "Você", true),
-                Mensagem(3, "Vamos revisar o material hoje?", "Lucas", false)
+                MensagemUI(1, "Olá pessoal!", "Maria", idRemetente = 2, isUser = false),
+                MensagemUI(2, "Oi Maria, tudo bem?", "Você", idRemetente = 1, isUser = true),
+                MensagemUI(3, "Vamos revisar o material hoje?", "Lucas", idRemetente = 3, isUser = false)
             )
         )
+
     }
 
     var novaMensagem by remember { mutableStateOf("") }
@@ -89,10 +96,15 @@ fun ChatGrupo(
         ) {
             items(mensagens) { msg ->
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            navController.navigate("chatPrivado/${grupoId}/${msg.idRemetente}/$idUsuarioAtual")
+                        },
                     horizontalArrangement = if (msg.isUser) Arrangement.End else Arrangement.Start
                 ) {
-                    if (!msg.isUser) {
+
+                if (!msg.isUser) {
                         Box(
                             modifier = Modifier
                                 .size(24.dp)
@@ -166,10 +178,11 @@ fun ChatGrupo(
                 onClick = {
                     if (novaMensagem.isNotBlank()) {
                         scope.launch {
-                            mensagens = mensagens + Mensagem(
+                            mensagens = mensagens + MensagemUI(
                                 id = mensagens.size + 1,
                                 texto = novaMensagem.trim(),
                                 remetente = "Você",
+                                idRemetente = idUsuarioAtual,
                                 isUser = true
                             )
                             novaMensagem = ""

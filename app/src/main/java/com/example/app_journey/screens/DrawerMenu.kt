@@ -55,10 +55,11 @@ fun DrawerMenu(
                 onClick = { onOptionSelected("meu_calendario") }
             )
             DrawerItem(
-                text = "Chats",
+                text = "Conversas Privadas",
                 icon = Icons.Default.Call,
-                onClick = { onOptionSelected("Chats") }
+                onClick = { onOptionSelected("conversas_privadas") }
             )
+
             DrawerItem(
                 text = "E-Books",
                 icon = Icons.Default.Info,

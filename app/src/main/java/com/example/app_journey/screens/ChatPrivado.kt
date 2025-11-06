@@ -41,8 +41,12 @@ import kotlinx.coroutines.launch
 import com.example.app_journey.model.Mensagem
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
+import com.example.app_journey.service.SocketHandler
 import io.socket.client.IO
 import io.socket.client.Socket
+import org.json.JSONObject
+import io.socket.emitter.Emitter
+
 
 
 
@@ -59,7 +63,7 @@ fun ChatPrivadoScreen(
     var texto by remember { mutableStateOf("") }
     val listaState = rememberLazyListState()
 
-    val socket = remember { com.example.app_journey.socket.SocketHandler.getSocket() }
+    val socket = remember { SocketHandler.getSocket() }
 
     // 1) Carrega mensagens iniciais
     LaunchedEffect(Unit) {
@@ -71,15 +75,18 @@ fun ChatPrivadoScreen(
         socket.emit("entrarSala", chatRoomId)
 
         // 3) Escuta novas mensagens chegando
-        socket.on("novaMensagem") { args ->
-            val msg = args[0] as String // conteúdo
-            val idUser = args[1] as Int
+        socket.on("novaMensagem", Emitter.Listener { args ->
+            val data = args[0] as JSONObject
+            val novaMensagem = Mensagem(
+                id_usuario = data.getInt("id_usuario"),
+                conteudo = data.getString("conteudo"),
+                id_chat = data.getInt("id_chat"),
+                id_mensagens = data.getInt("id_mensagens"),
+                enviado_em = data.getString("enviado_em")
+            )
 
-            mensagens = mensagens + Mensagem(idUser, msg, chatRoomId)
-
-            // Scroll automático para última msg
-            listaState.animateScrollToItem(mensagens.size)
-        }
+            mensagens = mensagens + novaMensagem
+        })
     }
 
     Column(Modifier.fillMaxSize()) {
