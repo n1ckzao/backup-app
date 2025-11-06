@@ -258,28 +258,23 @@ fun Calendario(
                                     confirmButton = {
                                         TextButton(onClick = {
                                             mostrarConfirmacao = false
-                                            RetrofitInstance.calendarioService
-                                                .deleteEventoPorId(evento.id)
-                                                .enqueue(object : retrofit2.Callback<Void> {
-                                                    override fun onResponse(
-                                                        call: retrofit2.Call<Void>,
-                                                        response: retrofit2.Response<Void>
-                                                    ) {
-                                                        if (response.isSuccessful) {
-                                                            println("✅ Evento ${evento.id} deletado com sucesso!")
-                                                            Toast.makeText(context, "Evento excluído", Toast.LENGTH_SHORT).show()
-                                                            eventos = eventos.filterNot { it.id == evento.id }
-                                                        } else {
-                                                            println("❌ Erro ao deletar evento: ${response.code()} - ${response.message()}")
-                                                            Toast.makeText(context, "Erro ao excluir: ${response.code()}", Toast.LENGTH_LONG).show()
-                                                        }
+                                            RetrofitInstance.calendarioService.listar().enqueue(object : Callback<CalendarioResponseWrapper> {
+                                                override fun onResponse(
+                                                    call: Call<CalendarioResponseWrapper>,
+                                                    response: Response<CalendarioResponseWrapper>
+                                                ) {
+                                                    if (response.isSuccessful) {
+                                                        val dados = response.body()
+                                                        // use os dados aqui
                                                     }
+                                                }
 
-                                                    override fun onFailure(call: retrofit2.Call<Void>, t: Throwable) {
-                                                        println("⚠️ Falha ao deletar evento: ${t.message}")
-                                                        Toast.makeText(context, "Falha ao excluir: ${t.message}", Toast.LENGTH_LONG).show()
-                                                    }
-                                                })
+                                                override fun onFailure(call: Call<CalendarioResponseWrapper>, t: Throwable) {
+                                                    // tratar erro
+                                                    t.printStackTrace()
+                                                }
+                                            })
+
                                         }) { Text("Sim") }
                                     },
                                     dismissButton = {

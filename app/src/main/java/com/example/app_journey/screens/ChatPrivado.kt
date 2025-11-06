@@ -125,8 +125,6 @@ fun ChatPrivadoScreen(
                                 "conteudo" to msgParaEnviar
                             )
                         )
-
-                        // Apenas adiciona a nova mensagem localmente (rápido)                        // Apenas adiciona a nova mensagem localmente (rápido)
                         val novasMensagens = RetrofitInstance
                             .mensagensService
                             .listarMensagensPorSala(chatRoomId)
