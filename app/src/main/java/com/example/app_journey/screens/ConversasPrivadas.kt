@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.app_journey.model.ChatRoomPrivado
 import com.example.app_journey.service.RetrofitInstance
+import io.socket.client.IO
+import io.socket.client.Socket
+
 
 @Composable
 fun ConversasPrivadasScreen(navController: NavHostController, idUsuario: Int) {

@@ -279,7 +279,6 @@ fun Cadastro(navegacao: NavHostController) {
                                     email = email.value,
                                     senha = senha.value,
                                     tipo_usuario = "Estudante",
-                                    id_usuario = 1,
                                     foto_perfil = "",
                                     descricao = ""
                                 )

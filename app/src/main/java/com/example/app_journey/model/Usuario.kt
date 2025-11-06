@@ -1,6 +1,6 @@
 package com.example.app_journey.model
 data class Usuario(
-    val id_usuario: Int,
+    val id_usuario: Int? = null,
     val nome_completo: String,
     val email: String,
     val data_nascimento: String?,

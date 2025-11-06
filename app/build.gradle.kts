@@ -72,4 +72,8 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
     implementation("com.google.code.gson:gson:2.9.0")
+    implementation("io.socket:socket.io-client:2.1.0") {
+        exclude(group = "org.json", module = "json")
+    }
+
 }

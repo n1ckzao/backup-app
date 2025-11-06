@@ -41,6 +41,9 @@ import kotlinx.coroutines.launch
 import com.example.app_journey.model.Mensagem
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
+import io.socket.client.IO
+import io.socket.client.Socket
+
 
 
 
@@ -56,9 +59,27 @@ fun ChatPrivadoScreen(
     var texto by remember { mutableStateOf("") }
     val listaState = rememberLazyListState()
 
-    LaunchedEffect(true) {
-        mensagens =
-            (RetrofitInstance.mensagensService.listarMensagensPorSala(chatRoomId).mensagens ?: emptyList()) as List<Mensagem>
+    val socket = remember { com.example.app_journey.socket.SocketHandler.getSocket() }
+
+    // 1) Carrega mensagens iniciais
+    LaunchedEffect(Unit) {
+        mensagens = RetrofitInstance.mensagensService
+            .listarMensagensPorSala(chatRoomId)
+            .mensagens ?: emptyList()
+
+        // 2) Entra na sala
+        socket.emit("entrarSala", chatRoomId)
+
+        // 3) Escuta novas mensagens chegando
+        socket.on("novaMensagem") { args ->
+            val msg = args[0] as String // conteúdo
+            val idUser = args[1] as Int
+
+            mensagens = mensagens + Mensagem(idUser, msg, chatRoomId)
+
+            // Scroll automático para última msg
+            listaState.animateScrollToItem(mensagens.size)
+        }
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -69,10 +90,7 @@ fun ChatPrivadoScreen(
             }
         })
 
-        LazyColumn(
-            state = listaState,
-            modifier = Modifier.weight(1f)
-        ) {
+        LazyColumn(state = listaState, modifier = Modifier.weight(1f)) {
             items(mensagens) { msg ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -84,23 +102,11 @@ fun ChatPrivadoScreen(
                             .widthIn(max = 260.dp)
                             .background(
                                 if (msg.id_usuario == idUsuarioAtual) Color(0xFF6750A4) else Color(0xFF4C36C3),
-                                RoundedCornerShape(
-                                    topStart = 16.dp,
-                                    topEnd = 16.dp,
-                                    bottomStart = if (msg.id_usuario == idUsuarioAtual) 16.dp else 0.dp,
-                                    bottomEnd = if (msg.id_usuario == idUsuarioAtual) 0.dp else 16.dp
-                                )
+                                RoundedCornerShape(16.dp)
                             )
-
                             .padding(12.dp)
                     ) {
-                        Text(
-                            text = msg.conteudo,
-                            color = Color.White,
-                            fontSize = 15.sp,
-                            textAlign = if (msg.id_usuario == idUsuarioAtual)
-                                TextAlign.End else TextAlign.Start
-                        )
+                        Text(text = msg.conteudo, color = Color.White)
                     }
                 }
             }
@@ -114,27 +120,25 @@ fun ChatPrivadoScreen(
             )
             IconButton(onClick = {
                 if (texto.isNotBlank()) {
-                    val msgParaEnviar = texto
+                    val msg = texto
                     texto = ""
 
+                    // 1) Envia para o backend REST
                     CoroutineScope(Dispatchers.IO).launch {
                         RetrofitInstance.mensagensService.enviarMensagem(
                             mapOf(
                                 "id_chat" to chatRoomId,
                                 "id_usuario" to idUsuarioAtual,
-                                "conteudo" to msgParaEnviar
+                                "conteudo" to msg
                             )
                         )
-                        val novasMensagens = RetrofitInstance
-                            .mensagensService
-                            .listarMensagensPorSala(chatRoomId)
-                            .mensagens ?: emptyList()
-
-                        mensagens = novasMensagens as List<Mensagem>
                     }
+
+                    // 2) Emite em tempo real
+                    socket.emit("enviarMensagem", chatRoomId, idUsuarioAtual, msg)
                 }
             }) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "enviar")
+                Icon(Icons.Default.ArrowForward, contentDescription = "send")
             }
         }
     }
