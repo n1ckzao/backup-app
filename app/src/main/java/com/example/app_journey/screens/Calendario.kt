@@ -29,6 +29,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.platform.LocalContext
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 data class Evento(
     val id: Int,
@@ -258,22 +261,23 @@ fun Calendario(
                                     confirmButton = {
                                         TextButton(onClick = {
                                             mostrarConfirmacao = false
-                                            RetrofitInstance.calendarioService.listar().enqueue(object : Callback<CalendarioResponseWrapper> {
-                                                override fun onResponse(
-                                                    call: Call<CalendarioResponseWrapper>,
-                                                    response: Response<CalendarioResponseWrapper>
-                                                ) {
-                                                    if (response.isSuccessful) {
-                                                        val dados = response.body()
-                                                        // use os dados aqui
+                                            RetrofitInstance.calendarioService.excluirEvento(evento.id)
+                                                .enqueue(object : Callback<CalendarioResponseWrapper> {
+                                                    override fun onResponse(
+                                                        call: Call<CalendarioResponseWrapper>,
+                                                        response: Response<CalendarioResponseWrapper>
+                                                    ) {
+                                                        if (response.isSuccessful) {
+                                                            eventos = eventos.filter { it.id != evento.id } // REMOVE DA LISTA LOCAL
+                                                            Toast.makeText(context, "Evento removido", Toast.LENGTH_SHORT).show()
+                                                        }
                                                     }
-                                                }
 
-                                                override fun onFailure(call: Call<CalendarioResponseWrapper>, t: Throwable) {
-                                                    // tratar erro
-                                                    t.printStackTrace()
-                                                }
-                                            })
+                                                    override fun onFailure(call: Call<CalendarioResponseWrapper>, t: Throwable) {
+                                                        Toast.makeText(context, "Erro: ${t.message}", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                })
+
 
                                         }) { Text("Sim") }
                                     },
