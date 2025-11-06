@@ -36,7 +36,9 @@ fun ConversasPrivadasScreen(navController: NavHostController, idUsuario: Int) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { navController.navigate("chatPrivado/${sala.id_chat_room}/${sala.nomeOutroUsuario}") }
+                    .clickable {
+                        navController.navigate("chatPrivado/${sala.id_chat_room}/${sala.nomeOutroUsuario}/$idUsuario")
+                    }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

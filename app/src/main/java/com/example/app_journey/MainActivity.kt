@@ -53,6 +53,8 @@ class MainActivity : ComponentActivity() {
 fun AppContent() {
     var usuarioLogado by remember { mutableStateOf<Usuario?>(null) }
     var carregandoUsuario by remember { mutableStateOf(true) }
+    val idUsuarioLogado = usuarioLogado?.id_usuario ?: -1
+
 
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -191,12 +193,16 @@ fun AppContent() {
                     CalendarioPessoal(navController = navController, idUsuario = idUsuario)
                 }
 
-                composable("conversasPrivadas") { ConversasPrivadasScreen(navController, idUsuarioLogado) }
+                composable("conversasPrivadas/{idUsuario}") { backStack ->
+                    val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
+                    ConversasPrivadasScreen(navController, idUsuario)
+                }
 
-                composable("chatPrivado/{id}/{nome}") { backStack ->
+                composable("chatPrivado/{id}/{nome}/{idUsuario}") { backStack ->
                     val chatId = backStack.arguments?.getString("id")!!.toInt()
                     val nome = backStack.arguments?.getString("nome")!!
-                    ChatPrivadoScreen(navController, chatId, nome, idUsuarioLogado)
+                    val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
+                    ChatPrivadoScreen(navController, chatId, nome, idUsuario)
                 }
 
                 composable("chat_grupo/{grupoId}") { backStackEntry ->

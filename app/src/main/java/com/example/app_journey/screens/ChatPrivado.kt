@@ -38,6 +38,9 @@ import com.example.app_journey.service.RetrofitInstance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.example.app_journey.model.Mensagem
+
+
 
 @Composable
 fun ChatPrivadoScreen(
@@ -66,29 +69,30 @@ fun ChatPrivadoScreen(
             items(mensagens) { msg ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = if (msg.id_usuario_remetente == idUsuarioAtual)
+                    horizontalArrangement = if (msg.id_usuario == idUsuarioAtual)
                         Arrangement.End else Arrangement.Start
                 ) {
                     Box(
                         modifier = Modifier
                             .widthIn(max = 260.dp)
                             .background(
-                                if (msg.id_usuario_remetente == idUsuarioAtual) Color(0xFF6750A4)
+                                if (msg.id_usuario == idUsuarioAtual) Color(0xFF6750A4)
                                 else Color(0xFF4C36C3),
                                 RoundedCornerShape(12.dp)
                             )
                             .padding(12.dp)
                     ) {
                         Text(
-                            text = msg.texto,
+                            text = msg.conteudo,
                             color = Color.White,
                             fontSize = 15.sp,
-                            textAlign = if (msg.id_usuario_remetente == idUsuarioAtual)
+                            textAlign = if (msg.id_usuario == idUsuarioAtual)
                                 TextAlign.End else TextAlign.Start
                         )
                     }
                 }
             }
+
 
         }
 
@@ -103,11 +107,12 @@ fun ChatPrivadoScreen(
                     CoroutineScope(Dispatchers.IO).launch {
                         RetrofitInstance.mensagensService.enviarMensagem(
                             mapOf(
-                                "id_chat_room" to chatRoomId,
-                                "id_usuario_remetente" to idUsuarioAtual,
-                                "texto" to texto
+                                "id_chat" to chatRoomId,
+                                "id_usuario" to idUsuarioAtual,
+                                "conteudo" to texto
                             )
                         )
+
                         mensagens = (RetrofitInstance.mensagensService.listarMensagensPorSala(chatRoomId).mensagens ?: emptyList()) as List<Mensagem>
                         texto = ""
                     }
