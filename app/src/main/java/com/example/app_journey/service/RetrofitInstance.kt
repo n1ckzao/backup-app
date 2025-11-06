@@ -1,11 +1,12 @@
 package com.example.app_journey.service
 
+import com.example.app_journey.network.ChatPrivadoService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitInstance {
     private val retrofit = Retrofit.Builder()
-        .baseUrl("http://10.107.144.21:8080/v1/journey/")
+        .baseUrl("http://10.107.140.5:8080/v1/journey/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
@@ -16,5 +17,6 @@ object RetrofitInstance {
     val calendarioService: CalendarioService by lazy {
         retrofit.create(CalendarioService::class.java)
     }
-
+    val mensagensService = retrofit.create(MensagensService::class.java)
+    val chatPrivadoService = retrofit.create(ChatPrivadoService::class.java)
 }

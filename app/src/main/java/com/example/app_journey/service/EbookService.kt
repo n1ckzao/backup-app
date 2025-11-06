@@ -12,20 +12,20 @@ import retrofit2.http.Path
 interface EbookService {
     // GET: todos os eventos
     @GET("ebook")
-    fun getTodosEventos(): Call<CalendarioResponseWrapper>
+    fun getTodosEbooks(): Call<CalendarioResponseWrapper>
 
     // GET: evento específico por id
     @GET("ebook/:id")
-    fun getEventoPorId(
+    fun getEbookPorId(
         @Path("id") idEvento: Int
     ): Call<CalendarioResponseWrapper>
 
     // POST: criar novo evento
     @POST("ebook")
-    fun criarEvento(
+    fun criarEbook(
         @Body evento: NovoEventoRequest
     ): Call<CalendarioResponseWrapper>
 
     @DELETE("ebook/{id}")
-    fun deleteEventoPorId(@Path("id") idEvento: Int): Call<Void>
+    fun deleteEbookPorId(@Path("id") idEvento: Int): Call<Void>
 }

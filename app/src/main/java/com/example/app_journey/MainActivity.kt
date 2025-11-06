@@ -191,6 +191,14 @@ fun AppContent() {
                     CalendarioPessoal(navController = navController, idUsuario = idUsuario)
                 }
 
+                composable("conversasPrivadas") { ConversasPrivadasScreen(navController, idUsuarioLogado) }
+
+                composable("chatPrivado/{id}/{nome}") { backStack ->
+                    val chatId = backStack.arguments?.getString("id")!!.toInt()
+                    val nome = backStack.arguments?.getString("nome")!!
+                    ChatPrivadoScreen(navController, chatId, nome, idUsuarioLogado)
+                }
+
                 composable("chat_grupo/{grupoId}") { backStackEntry ->
                     val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
                     ChatGrupo(navController = navController, grupoId = grupoId)
