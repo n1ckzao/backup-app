@@ -39,6 +39,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.example.app_journey.model.Mensagem
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+
 
 
 
@@ -51,6 +54,7 @@ fun ChatPrivadoScreen(
 ) {
     var mensagens by remember { mutableStateOf<List<Mensagem>>(emptyList()) }
     var texto by remember { mutableStateOf("") }
+    val listaState = rememberLazyListState()
 
     LaunchedEffect(true) {
         mensagens =
@@ -65,7 +69,10 @@ fun ChatPrivadoScreen(
             }
         })
 
-        LazyColumn(modifier = Modifier.weight(1f)) {
+        LazyColumn(
+            state = listaState,
+            modifier = Modifier.weight(1f)
+        ) {
             items(mensagens) { msg ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -76,10 +83,15 @@ fun ChatPrivadoScreen(
                         modifier = Modifier
                             .widthIn(max = 260.dp)
                             .background(
-                                if (msg.id_usuario == idUsuarioAtual) Color(0xFF6750A4)
-                                else Color(0xFF4C36C3),
-                                RoundedCornerShape(12.dp)
+                                if (msg.id_usuario == idUsuarioAtual) Color(0xFF6750A4) else Color(0xFF4C36C3),
+                                RoundedCornerShape(
+                                    topStart = 16.dp,
+                                    topEnd = 16.dp,
+                                    bottomStart = if (msg.id_usuario == idUsuarioAtual) 16.dp else 0.dp,
+                                    bottomEnd = if (msg.id_usuario == idUsuarioAtual) 0.dp else 16.dp
+                                )
                             )
+
                             .padding(12.dp)
                     ) {
                         Text(
@@ -92,8 +104,6 @@ fun ChatPrivadoScreen(
                     }
                 }
             }
-
-
         }
 
         Row(Modifier.fillMaxWidth().padding(8.dp)) {
@@ -104,17 +114,25 @@ fun ChatPrivadoScreen(
             )
             IconButton(onClick = {
                 if (texto.isNotBlank()) {
+                    val msgParaEnviar = texto
+                    texto = ""
+
                     CoroutineScope(Dispatchers.IO).launch {
                         RetrofitInstance.mensagensService.enviarMensagem(
                             mapOf(
                                 "id_chat" to chatRoomId,
                                 "id_usuario" to idUsuarioAtual,
-                                "conteudo" to texto
+                                "conteudo" to msgParaEnviar
                             )
                         )
 
-                        mensagens = (RetrofitInstance.mensagensService.listarMensagensPorSala(chatRoomId).mensagens ?: emptyList()) as List<Mensagem>
-                        texto = ""
+                        // Apenas adiciona a nova mensagem localmente (rápido)                        // Apenas adiciona a nova mensagem localmente (rápido)
+                        val novasMensagens = RetrofitInstance
+                            .mensagensService
+                            .listarMensagensPorSala(chatRoomId)
+                            .mensagens ?: emptyList()
+
+                        mensagens = novasMensagens as List<Mensagem>
                     }
                 }
             }) {

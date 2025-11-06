@@ -19,4 +19,6 @@ object RetrofitInstance {
     }
     val mensagensService = retrofit.create(MensagensService::class.java)
     val chatPrivadoService = retrofit.create(ChatPrivadoService::class.java)
+
+
 }
