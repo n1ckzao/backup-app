@@ -1,6 +1,7 @@
 // MainActivity.kt
 package com.example.app_journey
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -207,8 +208,18 @@ fun AppContent() {
 
                 composable("chat_grupo/{grupoId}") { backStackEntry ->
                     val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
-                    ChatGrupo(navController = navController, grupoId = grupoId)
+
+                    val context = LocalContext.current
+                    val sharedPreferences = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+                    val idUsuarioAtual = sharedPreferences.getInt("idUsuario", 0)
+
+                    ChatGrupo(
+                        navController = navController,
+                        grupoId = grupoId,
+                        idUsuarioAtual = idUsuarioAtual
+                    )
                 }
+
 
                 composable("verificar_email/{email}") { backStackEntry ->
                     val email = backStackEntry.arguments?.getString("email")
