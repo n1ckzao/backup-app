@@ -150,14 +150,18 @@ fun CardInfoPessoais(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                Column (
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ){
                 if (profileImageUri != null) {
                     Image(
                         painter = rememberAsyncImagePainter(profileImageUri),
                         contentDescription = "Avatar",
                         modifier = Modifier
-                            .size(64.dp)
+                            .size(128.dp)
                             .clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
@@ -169,13 +173,7 @@ fun CardInfoPessoais(
                         modifier = Modifier.size(64.dp)
                     )
                 }
-
-                Button(
-                    onClick = onSelectImage,
-                    colors = ButtonDefaults.buttonColors(containerColor = PurpleLighter)
-                ) {
-                    Text("Enviar foto", color = Color(0xFF341E9B))
-                }
+            }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
