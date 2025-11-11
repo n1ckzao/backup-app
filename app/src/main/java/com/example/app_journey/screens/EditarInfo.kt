@@ -214,18 +214,6 @@ fun EditarInfo(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
-                    value = senha,
-                    onValueChange = { senha = it },
-                    label = { Text("Nova Senha") },
-                    shape = RoundedCornerShape(33.dp),
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = outlinedColors
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
                     value = tipoUsuario,
                     onValueChange = { tipoUsuario = it },
                     label = { Text("Tipo de Usuário") },
@@ -244,36 +232,41 @@ fun EditarInfo(
                             Toast.makeText(context, "ID de usuário inválido", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
-                        val gson = Gson()
 
                         val usuarioAtualizado = usuario.copy(
                             nome_completo = nome,
                             email = email,
-                            data_nascimento = dataNascimento.takeIf { it.isNotBlank() },
-                            foto_perfil = imagemUrl,
+                            data_nascimento = dataNascimento,
                             descricao = descricao,
-                            senha = if (senha.isNotBlank()) senha else usuario.senha ?: "",
-                            tipo_usuario = tipoUsuario
+                            tipo_usuario = tipoUsuario,
+                            foto_perfil = imagemUrl,
+                            senha = if (senha.isNotBlank()) senha else usuario.senha
                         )
-                        val usuarioJson = gson.toJson(usuarioAtualizado)
 
                         scope.launch {
                             try {
                                 RetrofitInstance.usuarioService
                                     .atualizarUsuarioPorId(userId, usuarioAtualizado)
                                     .enqueue(object : Callback<Usuario> {
+
                                         override fun onResponse(call: Call<Usuario>, response: Response<Usuario>) {
                                             if (response.isSuccessful) {
+
                                                 onSave(usuarioAtualizado)
+
+                                                val gson = Gson()
+                                                val usuarioJson = gson.toJson(usuarioAtualizado)
 
                                                 navController.previousBackStackEntry
                                                     ?.savedStateHandle
                                                     ?.set("usuarioAtualizado", usuarioJson)
+
+
                                                 navController.popBackStack()
+
                                             } else {
                                                 val errorBody = response.errorBody()?.string()
                                                 Toast.makeText(context, "Erro ${response.code()}: $errorBody", Toast.LENGTH_LONG).show()
-                                                println("Erro PUT: $errorBody")
                                             }
                                         }
 
@@ -291,6 +284,7 @@ fun EditarInfo(
                 ) {
                     Text("Salvar alterações", color = Color(0xFF341E9B))
                 }
+
             }
         }
     }
@@ -341,11 +335,15 @@ fun EditarInfoWrapper(navController: NavController, idUsuario: Int?) {
                 navController = navController,
                 usuario = usuario!!,
                 onSave = { usuarioAtualizado ->
+                    val usuarioJson = Gson().toJson(usuarioAtualizado)
+
                     navController.previousBackStackEntry
                         ?.savedStateHandle
-                        ?.set("usuarioAtualizado", usuarioAtualizado)
+                        ?.set("usuarioAtualizado", usuarioJson)
+
                     navController.popBackStack()
                 }
+
             )
         }
         else -> {

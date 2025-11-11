@@ -87,7 +87,7 @@ fun Login(navegacao: NavHostController?) {
                     Column(modifier = Modifier.fillMaxWidth().height(226.dp)) {
                         Text(
                             text = "Login",
-                            fontSize = 30.sp,
+                            fontSize = 27.sp,
                             color = Color.White,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()

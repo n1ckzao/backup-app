@@ -27,7 +27,7 @@ interface UsuarioService {
     @PUT("usuario/{id}")
     fun atualizarUsuarioPorId(
         @Path("id") id: Int,
-        @Body usuarioAtualizado: Usuario
+        @Body usuarioAtualizado: Usuario?
     ): Call<Usuario>
 
 
