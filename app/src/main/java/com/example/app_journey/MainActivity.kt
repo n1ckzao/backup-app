@@ -24,20 +24,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.app_journey.model.Usuario
-import com.example.app_journey.model.UsuarioResult
 import com.example.app_journey.screens.*
 import com.example.app_journey.service.RetrofitInstance
-import com.example.app_journey.ui.theme.PurpleMedium
 import com.example.app_journey.utils.SharedPrefHelper
 import kotlinx.coroutines.launch
-import retrofit2.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -95,10 +90,15 @@ fun AppContent() {
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            DrawerMenu(onOptionSelected = { rota ->
-                navController.navigate(rota)
-                scope.launch { drawerState.close() }
-            })
+            DrawerMenu(
+                idUsuario = idUsuarioLogado,
+                onOptionSelected = { rota ->
+                    navController.navigate(rota)
+                    scope.launch { drawerState.close() }
+                }
+            )
+
+
         },
         gesturesEnabled = drawerState.isOpen
     )
@@ -161,7 +161,11 @@ fun AppContent() {
                 composable("login") { Login(navController) }
                 composable("cadastro") { Cadastro(navController) }
                 composable("recuperacao_senha") { RecuperacaoSenha(navController) }
-                composable("home") { Home(navController) }
+                composable("home/{idUsuario}") { backStack ->
+                    val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
+                    Home(navController, idUsuario)
+                }
+
                 composable("profile") { Perfil(navController) }
                 composable("criar_grupo") { CriarGrupo(navegacao = navController) }
                 composable("meus_grupos") { MeusGrupos(navController) }

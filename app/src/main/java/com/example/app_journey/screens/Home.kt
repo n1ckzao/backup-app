@@ -26,7 +26,7 @@ import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Home(navegacao: NavHostController) {
+fun Home(navegacao: NavHostController, idUsuario: Int) {
     val context = LocalContext.current
 
     val grupos = remember { mutableStateListOf<Grupo>() }

@@ -27,6 +27,7 @@ import com.example.app_journey.ui.theme.PrimaryPurple
 
 @Composable
 fun DrawerMenu(
+    idUsuario: Int,
     onOptionSelected: (String) -> Unit
 ) {
     ModalDrawerSheet(
@@ -57,7 +58,7 @@ fun DrawerMenu(
             DrawerItem(
                 text = "Conversas Privadas",
                 icon = Icons.Default.Call,
-                onClick = { onOptionSelected("conversas_privadas") }
+                onClick = { onOptionSelected("conversasPrivadas/$idUsuario") }
             )
 
             DrawerItem(
@@ -113,6 +114,9 @@ fun DrawerItem(
 @Composable
 fun DrawerMenuPreview() {
     JouneyperfilTheme {
-        DrawerMenu(onOptionSelected = {})
+        DrawerMenu(
+            onOptionSelected = {},
+            idUsuario = 1
+        )
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -18,11 +19,10 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,27 +30,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.app_journey.service.RetrofitInstance
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.example.app_journey.model.Mensagem
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.LaunchedEffect
 import com.example.app_journey.service.SocketHandler
-import io.socket.client.IO
-import io.socket.client.Socket
-import org.json.JSONObject
 import io.socket.emitter.Emitter
-
-
-
-
-
+import org.json.JSONObject
 
 @Composable
 fun ChatPrivadoScreen(
@@ -65,28 +54,42 @@ fun ChatPrivadoScreen(
 
     val socket = remember { SocketHandler.getSocket() }
 
-    // 1) Carrega mensagens iniciais
+    // Carrega mensagens iniciais e entra na sala
     LaunchedEffect(Unit) {
         mensagens = RetrofitInstance.mensagensService
             .listarMensagensPorSala(chatRoomId)
             .mensagens ?: emptyList()
 
-        // 2) Entra na sala
         socket.emit("entrarSala", chatRoomId)
+    }
 
-        // 3) Escuta novas mensagens chegando
-        socket.on("novaMensagem", Emitter.Listener { args ->
+    // Recebe mensagens em tempo real e remove listener ao sair da tela
+    DisposableEffect(Unit) {
+        val listener = Emitter.Listener { args ->
             val data = args[0] as JSONObject
             val novaMensagem = Mensagem(
-                id_usuario = data.getInt("id_usuario"),
-                conteudo = data.getString("conteudo"),
-                id_chat = data.getInt("id_chat"),
                 id_mensagens = data.getInt("id_mensagens"),
-                enviado_em = data.getString("enviado_em")
+                conteudo = data.getString("conteudo"),
+                enviado_em = data.optString("enviado_em"),
+                id_chat = data.getInt("id_chat"),
+                id_usuario = data.getInt("id_usuario")
             )
 
             mensagens = mensagens + novaMensagem
-        })
+        }
+
+        socket.on("novaMensagem", listener)
+
+        onDispose {
+            socket.off("novaMensagem", listener)
+        }
+    }
+
+    // Scroll automático quando chegar nova mensagem
+    LaunchedEffect(mensagens.size) {
+        if (mensagens.isNotEmpty()) {
+            listaState.animateScrollToItem(mensagens.size - 1)
+        }
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -100,7 +103,7 @@ fun ChatPrivadoScreen(
         LazyColumn(state = listaState, modifier = Modifier.weight(1f)) {
             items(mensagens) { msg ->
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(4.dp),
                     horizontalArrangement = if (msg.id_usuario == idUsuarioAtual)
                         Arrangement.End else Arrangement.Start
                 ) {
@@ -108,7 +111,8 @@ fun ChatPrivadoScreen(
                         modifier = Modifier
                             .widthIn(max = 260.dp)
                             .background(
-                                if (msg.id_usuario == idUsuarioAtual) Color(0xFF6750A4) else Color(0xFF4C36C3),
+                                if (msg.id_usuario == idUsuarioAtual) Color(0xFF6750A4)
+                                else Color(0xFF4C36C3),
                                 RoundedCornerShape(16.dp)
                             )
                             .padding(12.dp)
@@ -130,7 +134,6 @@ fun ChatPrivadoScreen(
                     val msg = texto
                     texto = ""
 
-                    // 1) Envia para o backend REST
                     CoroutineScope(Dispatchers.IO).launch {
                         RetrofitInstance.mensagensService.enviarMensagem(
                             mapOf(
@@ -141,7 +144,6 @@ fun ChatPrivadoScreen(
                         )
                     }
 
-                    // 2) Emite em tempo real
                     socket.emit("enviarMensagem", chatRoomId, idUsuarioAtual, msg)
                 }
             }) {

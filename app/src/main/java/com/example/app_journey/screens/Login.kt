@@ -247,7 +247,10 @@ fun Login(navegacao: NavHostController?) {
                                                         Log.e("Login", "ID: ${usuario.id}")
                                                     }
 
-                                                    navegacao?.navigate("home")
+                                                    navegacao?.navigate("home/${SharedPrefHelper.recuperarIdUsuario(context)}") {
+                                                        popUpTo("login") { inclusive = true }
+                                                    }
+
                                                 } else {
                                                     erro.value =
                                                         loginResponse?.message
