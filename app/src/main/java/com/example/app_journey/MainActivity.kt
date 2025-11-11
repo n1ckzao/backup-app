@@ -203,8 +203,15 @@ fun AppContent() {
                     val chatId = backStack.arguments?.getString("id")!!.toInt()
                     val nome = backStack.arguments?.getString("nome")!!
                     val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
-                    ChatPrivadoScreen(navController, chatId, nome, idUsuario)
+
+                    ChatPrivadoScreen(
+                        navController = navController,
+                        chatRoomId = chatId,
+                        nomeOutroUsuario = nome,
+                        idUsuarioAtual = idUsuario
+                    )
                 }
+
 
                 composable("chat_grupo/{grupoId}") { backStackEntry ->
                     val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
