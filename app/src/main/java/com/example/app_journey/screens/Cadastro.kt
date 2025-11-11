@@ -133,7 +133,7 @@ fun Cadastro(navegacao: NavHostController) {
                             shape = RoundedCornerShape(33.dp),
                             singleLine = true,
                             modifier = Modifier
-                                .height(55.dp)
+                                .height(57.dp)
                                 .fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Text,
@@ -162,7 +162,7 @@ fun Cadastro(navegacao: NavHostController) {
                             shape = RoundedCornerShape(33.dp),
                             singleLine = true,
                             modifier = Modifier
-                                .height(55.dp)
+                                .height(57.dp)
                                 .fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Number,
@@ -189,7 +189,7 @@ fun Cadastro(navegacao: NavHostController) {
                             shape = RoundedCornerShape(33.dp),
                             singleLine = true,
                             modifier = Modifier
-                                .height(55.dp)
+                                .height(57.dp)
                                 .fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Email,
@@ -215,7 +215,7 @@ fun Cadastro(navegacao: NavHostController) {
                             label = { Text(text = "Senha", color = Color.White) },
                             shape = RoundedCornerShape(33.dp),
                             singleLine = true,
-                            modifier = Modifier.height(55.dp).fillMaxWidth(),
+                            modifier = Modifier.height(57.dp).fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Password,
                                 imeAction = ImeAction.Next
@@ -239,7 +239,7 @@ fun Cadastro(navegacao: NavHostController) {
                             label = { Text(text = "Confirmar senha", color = Color.White) },
                             shape = RoundedCornerShape(33.dp),
                             singleLine = true,
-                            modifier = Modifier.height(55.dp).fillMaxWidth(),
+                            modifier = Modifier.height(57.dp).fillMaxWidth(),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Password,
                                 imeAction = ImeAction.Done

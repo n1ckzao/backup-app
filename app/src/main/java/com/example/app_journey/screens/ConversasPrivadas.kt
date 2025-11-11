@@ -30,8 +30,13 @@ import io.socket.client.Socket
 fun ConversasPrivadasScreen(navController: NavHostController, idUsuario: Int) {
     var conversas by remember { mutableStateOf<List<ChatRoomPrivado>>(emptyList()) }
 
-    LaunchedEffect(true) {
-        conversas = RetrofitInstance.chatPrivadoService.listarConversasPrivadas(idUsuario)
+    LaunchedEffect(idUsuario) {
+        try {
+            val result = RetrofitInstance.chatPrivadoService.listarConversasPrivadas(idUsuario)
+            conversas = result.conversas
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -50,3 +55,4 @@ fun ConversasPrivadasScreen(navController: NavHostController, idUsuario: Int) {
         }
     }
 }
+

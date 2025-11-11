@@ -1,5 +1,6 @@
 package com.example.app_journey.network
 
+import com.example.app_journey.model.ChatPrivadoResult
 import com.example.app_journey.model.ChatRoomPrivado
 import retrofit2.http.*
 
@@ -9,5 +10,5 @@ interface ChatPrivadoService {
     suspend fun obterOuCriarSalaPrivada(@Body dados: Map<String, Int>): ChatRoomPrivado
 
     @GET("/v1/journey/usuario/{id_usuario}/conversas-privadas")
-    suspend fun listarConversasPrivadas(@Path("id_usuario") idUsuario: Int): List<ChatRoomPrivado>
+    suspend fun listarConversasPrivadas(@Path("idUsuario") idUsuario: Int): ChatPrivadoResult
 }

@@ -143,14 +143,23 @@ fun CriarGrupo(navegacao: NavHostController) {
 
                     // Botão Voltar
                     Button(
-                        onClick = { navegacao.navigate("home") },
+                        onClick = { navegacao.popBackStack() },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEDEBFF)),
                         shape = RoundedCornerShape(50),
                         modifier = Modifier.height(40.dp)
                     ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color(0xFF341E9B))
-                        Text("  Voltar", color = Color(0xFF341E9B), fontWeight = FontWeight.Bold)
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Voltar",
+                            tint = Color(0xFF341E9B)
+                        )
+                        Text(
+                            text = "  Voltar",
+                            color = Color(0xFF341E9B),
+                            fontWeight = FontWeight.Bold
+                        )
                     }
+
 
                     CampoTexto("Nome do Grupo:", nome) { nome = it }
 
