@@ -1,142 +1,172 @@
 package com.example.app_journey.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
-import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.app_journey.model.Mensagem
 import com.example.app_journey.service.RetrofitInstance
-import kotlinx.coroutines.CoroutineScope
+import com.example.app_journey.utils.SocketHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import com.example.app_journey.model.Mensagem
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
-
-
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatPrivadoScreen(
     navController: NavHostController,
-    chatRoomId: Int,
-    nomeOutroUsuario: String,
-    idUsuarioAtual: Int
+    idChatRoom: Int,
+    nome: String,
+    idUsuario: Int
 ) {
+    val coroutineScope = rememberCoroutineScope()
     var mensagens by remember { mutableStateOf<List<Mensagem>>(emptyList()) }
-    var texto by remember { mutableStateOf("") }
-    val listaState = rememberLazyListState()
+    var novaMensagem by remember { mutableStateOf(TextFieldValue("")) }
 
-    LaunchedEffect(true) {
-        mensagens =
-            (RetrofitInstance.mensagensService.listarMensagensPorSala(chatRoomId).mensagens ?: emptyList()) as List<Mensagem>
+    // Histórico inicial
+    LaunchedEffect(idChatRoom) {
+        try {
+            val response = withContext(Dispatchers.IO) {
+                RetrofitInstance.mensagemService.getMensagensPorSala(idChatRoom)
+            }
+            if (response.isSuccessful) {
+                mensagens = response.body()?.mensagens ?: emptyList()
+            } else {
+                Log.e("ChatPrivado", "Erro ao carregar histórico: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e("ChatPrivado", "Erro: ${e.message}")
+        }
     }
 
-    Column(Modifier.fillMaxSize()) {
+    // Socket real-time
+    LaunchedEffect(Unit) {
+        SocketHandler.init()
+        SocketHandler.connect()
+        SocketHandler.joinRoom(idChatRoom)
 
-        TopAppBar(title = { Text(nomeOutroUsuario) }, navigationIcon = {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = null)
-            }
-        })
-
-        LazyColumn(
-            state = listaState,
-            modifier = Modifier.weight(1f)
-        ) {
-            items(mensagens) { msg ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = if (msg.id_usuario == idUsuarioAtual)
-                        Arrangement.End else Arrangement.Start
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .widthIn(max = 260.dp)
-                            .background(
-                                if (msg.id_usuario == idUsuarioAtual) Color(0xFF6750A4) else Color(0xFF4C36C3),
-                                RoundedCornerShape(
-                                    topStart = 16.dp,
-                                    topEnd = 16.dp,
-                                    bottomStart = if (msg.id_usuario == idUsuarioAtual) 16.dp else 0.dp,
-                                    bottomEnd = if (msg.id_usuario == idUsuarioAtual) 0.dp else 16.dp
-                                )
-                            )
-
-                            .padding(12.dp)
-                    ) {
-                        Text(
-                            text = msg.conteudo,
-                            color = Color.White,
-                            fontSize = 15.sp,
-                            textAlign = if (msg.id_usuario == idUsuarioAtual)
-                                TextAlign.End else TextAlign.Start
-                        )
-                    }
-                }
+        val socket = SocketHandler.getSocket()
+        socket?.on("receive_message") { args ->
+            if (args.isNotEmpty()) {
+                val data = args[0] as JSONObject
+                val novaMsg = Mensagem(
+                    id_mensagens = data.optInt("id_mensagens"),
+                    conteudo = data.optString("conteudo"),
+                    id_chat_room = data.optInt("id_chat_room"),
+                    id_usuario = data.optInt("id_usuario"),
+                    enviado_em = data.optString("enviado_em")
+                )
+                mensagens = mensagens + novaMsg
             }
         }
+    }
 
-        Row(Modifier.fillMaxWidth().padding(8.dp)) {
-            TextField(
-                value = texto,
-                onValueChange = { texto = it },
-                modifier = Modifier.weight(1f)
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text(text = nome, color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        SocketHandler.leaveRoom(idChatRoom)
+                        navController.popBackStack()
+                    }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF341E9B))
             )
-            IconButton(onClick = {
-                if (texto.isNotBlank()) {
-                    val msgParaEnviar = texto
-                    texto = ""
-
-                    CoroutineScope(Dispatchers.IO).launch {
-                        RetrofitInstance.mensagensService.enviarMensagem(
-                            mapOf(
-                                "id_chat" to chatRoomId,
-                                "id_usuario" to idUsuarioAtual,
-                                "conteudo" to msgParaEnviar
+        },
+        containerColor = Color(0xFFEDEEFF)
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(mensagens) { msg ->
+                    val isMine = msg.id_usuario == idUsuario
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = if (isMine) Alignment.CenterEnd else Alignment.CenterStart
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = if (isMine) Color(0xFF341E9B) else Color.White,
+                            modifier = Modifier.widthIn(max = 260.dp)
+                        ) {
+                            Text(
+                                msg.conteudo,
+                                color = if (isMine) Color.White else Color.Black,
+                                modifier = Modifier.padding(10.dp)
                             )
-                        )
-
-                        // Apenas adiciona a nova mensagem localmente (rápido)                        // Apenas adiciona a nova mensagem localmente (rápido)
-                        val novasMensagens = RetrofitInstance
-                            .mensagensService
-                            .listarMensagensPorSala(chatRoomId)
-                            .mensagens ?: emptyList()
-
-                        mensagens = novasMensagens as List<Mensagem>
+                        }
                     }
                 }
-            }) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "enviar")
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextField(
+                    value = novaMensagem,
+                    onValueChange = { novaMensagem = it },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 56.dp),
+                    placeholder = { Text("Digite uma mensagem...") },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Button(
+                    onClick = {
+                        val texto = novaMensagem.text.trim()
+                        if (texto.isNotEmpty()) {
+                            val json = JSONObject().apply {
+                                put("conteudo", texto)
+                                put("id_chat_room", idChatRoom)
+                                put("id_usuario", idUsuario)
+                            }
+                            SocketHandler.sendMessage(json)
+                            novaMensagem = TextFieldValue("")
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF341E9B))
+                ) {
+                    Text("Enviar", color = Color.White)
+                }
             }
         }
     }

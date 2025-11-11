@@ -130,7 +130,8 @@ fun HomeGrupo(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Button(
-                            onClick = { navController.navigate("chat_grupo/${grupoId}") },
+                            onClick = { navController.navigate("chat_grupo/${grupoId}/${idUsuario}")
+                            },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(48.dp),

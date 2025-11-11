@@ -260,10 +260,10 @@ fun Calendario(
                                             mostrarConfirmacao = false
                                             RetrofitInstance.calendarioService
                                                 .deleteEventoPorId(evento.id)
-                                                .enqueue(object : retrofit2.Callback<Void> {
+                                                .enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
                                                     override fun onResponse(
-                                                        call: retrofit2.Call<Void>,
-                                                        response: retrofit2.Response<Void>
+                                                        call: retrofit2.Call<CalendarioResponseWrapper>,
+                                                        response: retrofit2.Response<CalendarioResponseWrapper>
                                                     ) {
                                                         if (response.isSuccessful) {
                                                             println("✅ Evento ${evento.id} deletado com sucesso!")
@@ -275,12 +275,16 @@ fun Calendario(
                                                         }
                                                     }
 
-                                                    override fun onFailure(call: retrofit2.Call<Void>, t: Throwable) {
+                                                    override fun onFailure(
+                                                        call: retrofit2.Call<CalendarioResponseWrapper>,
+                                                        t: Throwable
+                                                    ) {
                                                         println("⚠️ Falha ao deletar evento: ${t.message}")
                                                         Toast.makeText(context, "Falha ao excluir: ${t.message}", Toast.LENGTH_LONG).show()
                                                     }
                                                 })
-                                        }) { Text("Sim") }
+                                        })
+                                        { Text("Sim") }
                                     },
                                     dismissButton = {
                                         TextButton(onClick = { mostrarConfirmacao = false }) {

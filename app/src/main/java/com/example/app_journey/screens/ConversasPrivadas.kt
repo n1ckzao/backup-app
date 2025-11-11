@@ -1,48 +1,154 @@
 package com.example.app_journey.screens
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.app_journey.model.ChatRoomPrivado
+import coil.compose.rememberAsyncImagePainter
+import com.example.app_journey.R
+import com.example.app_journey.model.Usuario
 import com.example.app_journey.service.RetrofitInstance
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ConversasPrivadasScreen(navController: NavHostController, idUsuario: Int) {
-    var conversas by remember { mutableStateOf<List<ChatRoomPrivado>>(emptyList()) }
+fun ConversasPrivadasScreen(
+    navController: NavHostController,
+    idUsuario: Int
+) {
+    var conversas by remember { mutableStateOf<List<Usuario>>(emptyList()) }
+    var carregando by remember { mutableStateOf(true) }
+    var erro by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(true) {
-        conversas = RetrofitInstance.chatPrivadoService.listarConversasPrivadas(idUsuario)
+    LaunchedEffect(idUsuario) {
+        scope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitInstance.chatPrivadoService.getConversasPrivadas(idUsuario)
+                }
+
+                if (response.isSuccessful) {
+                    conversas = response.body()?.usuarios ?: emptyList()
+                } else {
+                    erro = "Erro: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                erro = "Erro: ${e.message}"
+            } finally {
+                carregando = false
+            }
+        }
     }
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(conversas) { sala ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        navController.navigate("chatPrivado/${sala.id_chat_room}/${sala.nomeOutroUsuario}/$idUsuario")
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Conversas Privadas", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
                     }
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = sala.nomeOutroUsuario, fontSize = 20.sp, fontWeight = FontWeight.Medium)
+                }
+            )
+        },
+        containerColor = Color(0xFFF2F2F7)
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(Color(0xFFF2F2F7))
+        ) {
+            when {
+                carregando -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+
+                erro != null -> {
+                    Text(
+                        text = erro ?: "Erro desconhecido",
+                        color = Color.Red,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                conversas.isEmpty() -> {
+                    Text(
+                        "Nenhuma conversa encontrada",
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color.Gray
+                    )
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(conversas) { usuario: Usuario ->
+                            ConversaItem(usuario = usuario) {
+                                navController.navigate("chatPrivado/${usuario.id_usuario}/${usuario.nome_completo}/${idUsuario}")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ConversaItem(usuario: Usuario, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = CircleShape
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = if (usuario.foto_perfil != null)
+                    rememberAsyncImagePainter(usuario.foto_perfil)
+                else
+                    painterResource(id = R.drawable.logoclaro),
+                contentDescription = "Foto de perfil",
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(usuario.nome_completo, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(usuario.email ?: "", color = Color.Gray, fontSize = 14.sp)
             }
         }
     }
