@@ -1,5 +1,6 @@
 package com.example.app_journey.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.app_journey.R
 import com.example.app_journey.model.Usuario
 import com.example.app_journey.service.RetrofitInstance
+import com.example.app_journey.service.UsuarioService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,14 +45,35 @@ fun ConversasPrivadasScreen(
     LaunchedEffect(idUsuario) {
         scope.launch {
             try {
-                val response = withContext(Dispatchers.IO) {
-                    RetrofitInstance.chatPrivadoService.getConversasPrivadas(idUsuario)
+                Log.d("ConversasPrivadas", "Buscando conversas para o usuário: $idUsuario")
+                
+                // Busca a lista de usuários para conversas privadas
+                val response = try {
+                    withContext(Dispatchers.IO) {
+                        RetrofitInstance.usuarioService.listarUsuarios().execute()
+                    }
+                } catch (e: Exception) {
+                    Log.e("ConversasPrivadas", "Erro ao buscar usuários: ${e.message}")
+                    null
                 }
 
-                if (response.isSuccessful) {
-                    conversas = response.body()?.usuarios ?: emptyList()
+                if (response?.isSuccessful == true) {
+                    response.body()?.let { result ->
+                        if (result.status && result.usuario.isNotEmpty()) {
+                            val listaUsuarios = result.usuario.filter { it.id_usuario != idUsuario }
+                            Log.d("ConversasPrivadas", "${listaUsuarios.size} usuários carregados")
+                            conversas = listaUsuarios
+                        } else {
+                            erro = "Nenhum usuário encontrado"
+                            Log.e("ConversasPrivadas", "Resposta sem usuários")
+                        }
+                    } ?: run {
+                        erro = "Resposta inválida do servidor"
+                        Log.e("ConversasPrivadas", "Resposta nula")
+                    }
                 } else {
-                    erro = "Erro: ${response.code()}"
+                    erro = "Erro ao carregar conversas: ${response?.code()}"
+                    Log.e("ConversasPrivadas", "Erro na resposta: ${response?.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
                 erro = "Erro: ${e.message}"

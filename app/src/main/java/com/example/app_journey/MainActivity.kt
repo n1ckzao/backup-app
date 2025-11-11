@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 import com.example.app_journey.screens.ChatGrupoScreen
 import com.example.app_journey.screens.ChatPrivadoScreen
 import com.example.app_journey.screens.ConversasPrivadasScreen
+import com.example.app_journey.screens.PerfilPublicoScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -210,6 +211,13 @@ fun AppContent() {
                     val nome = backStack.arguments?.getString("nome")!!
                     val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
                     ChatPrivadoScreen(navController, chatId, nome, idUsuario)
+                }
+
+                // Perfil Público
+                composable("perfil_publico/{userId}/{currentUserId}") { backStackEntry ->
+                    val userId = backStackEntry.arguments?.getString("userId")?.toIntOrNull() ?: 0
+                    val currentUserId = backStackEntry.arguments?.getString("currentUserId")?.toIntOrNull() ?: 0
+                    PerfilPublicoScreen(navController, userId, currentUserId)
                 }
 
                 // Chat de grupo

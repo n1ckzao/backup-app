@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Espaçamentos -->
+    <dimen name="spacing_none">0dp</dimen>
+    <dimen name="spacing_xxs">2dp</dimen>
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_small">8dp</dimen>
+    <dimen name="spacing_medium">16dp</dimen>
+    <dimen name="spacing_large">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+    <dimen name="spacing_xxl">48dp</dimen>
+    
+    <!-- Tamanhos de borda -->
+    <dimen name="border_radius_small">4dp</dimen>
+    <dimen name="border_radius_medium">8dp</dimen>
+    <dimen name="border_radius_large">16dp</dimen>
+    <dimen name="border_radius_xl">24dp</dimen>
+    <dimen name="border_radius_circle">50%</dimen>
+    
+    <!-- Tamanhos de elevação -->
+    <dimen name="elevation_small">2dp</dimen>
+    <dimen name="elevation_medium">4dp</dimen>
+    <dimen name="elevation_large">8dp</dimen>
+    
+    <!-- Tamanhos de ícones -->
+    <dimen name="icon_size_small">16dp</dimen>
+    <dimen name="icon_size_medium">24dp</dimen>
+    <dimen name="icon_size_large">32dp</dimen>
+    <dimen name="icon_size_xl">48dp</dimen>
+    
+    <!-- Tamanhos de avatar -->
+    <dimen name="avatar_size_small">32dp</dimen>
+    <dimen name="avatar_size_medium">48dp</dimen>
+    <dimen name="avatar_size_large">64dp</dimen>
+    <dimen name="avatar_size_xl">96dp</dimen>
+    
+    <!-- Tamanhos de botões -->
+    <dimen name="button_height">48dp</dimen>
+    <dimen name="button_radius">24dp</dimen>
+    <dimen name="button_padding_horizontal">24dp</dimen>
+    
+    <!-- Tamanhos de cards -->
+    <dimen name="card_elevation">2dp</dimen>
+    <dimen name="card_radius">16dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    
+    <!-- Tamanhos de texto -->
+    <dimen name="text_size_xs">10sp</dimen>
+    <dimen name="text_size_small">12sp</dimen>
+    <dimen name="text_size_medium">14sp</dimen>
+    <dimen name="text_size_large">16sp</dimen>
+    <dimen name="text_size_xl">20sp</dimen>
+    <dimen name="text_size_xxl">24sp</dimen>
+    <dimen name="text_size_xxxl">32sp</dimen>
+    
+    <!-- Tamanhos de espaçamento de linha -->
+    <dimen name="line_height_xs">16sp</dimen>
+    <dimen name="line_height_small">20sp</dimen>
+    <dimen name="line_height_medium">24sp</dimen>
+    <dimen name="line_height_large">28sp</dimen>
+    <dimen name="line_height_xl">32sp</dimen>
+    
+    <!-- Tamanhos de espaçamento de letras -->
+    <dimen name="letter_spacing_small">0.02</dimen>
+    <dimen name="letter_spacing_medium">0.05</dimen>
+    <dimen name="letter_spacing_large">0.1</dimen>
+</resources>

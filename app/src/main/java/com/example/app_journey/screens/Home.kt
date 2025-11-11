@@ -1,13 +1,18 @@
 package com.example.app_journey.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -15,15 +20,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.app_journey.R
 import com.example.app_journey.model.Area
 import com.example.app_journey.model.Grupo
 import com.example.app_journey.model.GruposResult
 import com.example.app_journey.model.AreaResult
-import com.example.app_journey.service.RetrofitFactory
+import com.example.app_journey.service.RetrofitInstance
+import com.example.app_journey.utils.SharedPrefHelper
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home(navegacao: NavHostController) {
@@ -37,7 +44,7 @@ fun Home(navegacao: NavHostController) {
 
     // Carregar grupos
     LaunchedEffect(Unit) {
-        RetrofitFactory().getGrupoService().listarGrupos()
+        RetrofitInstance.grupoService.listarGrupos()
             .enqueue(object : Callback<GruposResult> {
                 override fun onResponse(call: Call<GruposResult>, response: Response<GruposResult>) {
                     if (response.isSuccessful) {
@@ -49,14 +56,15 @@ fun Home(navegacao: NavHostController) {
                 }
 
                 override fun onFailure(call: Call<GruposResult>, t: Throwable) {
-                    Toast.makeText(context, "Erro ao carregar grupos", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Erro ao carregar grupos: ${t.message}", Toast.LENGTH_SHORT).show()
+                    Log.e("Home", "Erro ao carregar grupos", t)
                 }
             })
     }
 
     // Carregar áreas (categorias)
     LaunchedEffect(Unit) {
-        RetrofitFactory().getAreaService().listarAreas()
+        RetrofitInstance.areaService.listarAreas()
             .enqueue(object : Callback<AreaResult> {
                 override fun onResponse(call: Call<AreaResult>, response: Response<AreaResult>) {
                     if (response.isSuccessful) {
@@ -64,11 +72,14 @@ fun Home(navegacao: NavHostController) {
                             areas.clear()
                             areas.addAll(it)
                         }
+                    } else {
+                        Log.e("Home", "Erro na resposta da API: ${response.code()}")
                     }
                 }
 
                 override fun onFailure(call: Call<AreaResult>, t: Throwable) {
-                    Toast.makeText(context, "Erro ao carregar categorias", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Erro ao carregar categorias: ${t.message}", Toast.LENGTH_SHORT).show()
+                    Log.e("Home", "Erro ao carregar categorias", t)
                 }
             })
     }
@@ -169,11 +180,25 @@ fun Home(navegacao: NavHostController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                val idUsuario = SharedPrefHelper.recuperarIdUsuario(context) ?: -1
+                val scope = rememberCoroutineScope()
+                
                 LazyColumn {
                     items(gruposFiltrados) { grupo ->
-                        GrupoCard(grupo = grupo) {
-                            navegacao.navigate("grupoinfo/${grupo.id_grupo}")
-                        }
+                        GrupoCard(
+                            grupo = grupo,
+                            onClick = {
+                                scope.launch {
+                                    try {
+                                        // Navega diretamente para o chat do grupo
+                                        navegacao.navigate("home_grupo/${grupo.id_grupo}/$idUsuario")
+                                    } catch (e: Exception) {
+                                        Log.e("Home", "Erro ao navegar para o grupo: ${e.localizedMessage}")
+                                        Toast.makeText(context, "Erro ao acessar o grupo", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        )
                     }
                 }
             }

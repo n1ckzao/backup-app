@@ -17,12 +17,14 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.app_journey.model.Mensagem
+import com.example.app_journey.model.MensagemResponse
 import com.example.app_journey.service.RetrofitInstance
 import com.example.app_journey.utils.SocketHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import io.socket.client.Socket
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,38 +41,105 @@ fun ChatPrivadoScreen(
     // Histórico inicial
     LaunchedEffect(idChatRoom) {
         try {
-            val response = withContext(Dispatchers.IO) {
-                RetrofitInstance.mensagemService.getMensagensPorSala(idChatRoom)
+            Log.d("ChatPrivado", "Buscando mensagens para a sala: $idChatRoom")
+            
+            // Primeiro tenta obter as mensagens da sala privada
+            val response = try {
+                withContext(Dispatchers.IO) {
+                    RetrofitInstance.chatPrivadoService.getMensagensPrivadas(idChatRoom)
+                }
+            } catch (e: Exception) {
+                Log.e("ChatPrivado", "Erro ao buscar mensagens: ${e.message}", e)
+                null
             }
-            if (response.isSuccessful) {
-                mensagens = response.body()?.mensagens ?: emptyList()
+            
+            if (response?.isSuccessful == true) {
+                val responseBody = response.body()
+                Log.d("ChatPrivado", "Resposta da API: $responseBody")
+                
+                val mensagensRecebidas = responseBody?.mensagens ?: emptyList()
+                Log.d("ChatPrivado", "${mensagensRecebidas.size} mensagens carregadas")
+                
+                // Ordena as mensagens por data de envio
+                mensagens = mensagensRecebidas.sortedBy { it.enviado_em ?: "" }
+                
+                // Log para depuração
+                mensagens.forEachIndexed { index, msg ->
+                    Log.d("ChatPrivado", "Mensagem ${index + 1}: ${msg.conteudo} (${msg.enviado_em})")
+                }
             } else {
-                Log.e("ChatPrivado", "Erro ao carregar histórico: ${response.code()}")
+                val errorBody = response?.errorBody()?.string()
+                Log.e("ChatPrivado", "Erro ao carregar histórico. Código: ${response?.code()}, Resposta: $errorBody")
             }
         } catch (e: Exception) {
-            Log.e("ChatPrivado", "Erro: ${e.message}")
+            Log.e("ChatPrivado", "Erro ao carregar mensagens", e)
         }
     }
 
     // Socket real-time
     LaunchedEffect(Unit) {
-        SocketHandler.init()
-        SocketHandler.connect()
-        SocketHandler.joinRoom(idChatRoom)
-
-        val socket = SocketHandler.getSocket()
-        socket?.on("receive_message") { args ->
-            if (args.isNotEmpty()) {
-                val data = args[0] as JSONObject
-                val novaMsg = Mensagem(
-                    id_mensagens = data.optInt("id_mensagens"),
-                    conteudo = data.optString("conteudo"),
-                    id_chat_room = data.optInt("id_chat_room"),
-                    id_usuario = data.optInt("id_usuario"),
-                    enviado_em = data.optString("enviado_em")
-                )
-                mensagens = mensagens + novaMsg
+        try {
+            Log.d("ChatPrivado", "Iniciando configuração do socket...")
+            
+            // Inicializa e conecta o socket
+            SocketHandler.init()
+            SocketHandler.connect()
+            
+            // Entra na sala do chat
+            SocketHandler.joinRoom(idChatRoom)
+            
+            val socket = SocketHandler.getSocket()
+            if (socket == null) {
+                Log.e("ChatPrivado", "❌ Falha ao obter instância do socket")
+                return@LaunchedEffect
             }
+            
+            Log.d("ChatPrivado", "✅ Socket configurado com sucesso")
+            
+            // Configura o listener para novas mensagens
+            socket.on("receive_message") { args ->
+                try {
+                    if (args.isNotEmpty() && args[0] is JSONObject) {
+                        val data = args[0] as JSONObject
+                        Log.d("ChatPrivado", "Nova mensagem recebida: $data")
+                        
+                        val novaMsg = Mensagem(
+                            id_mensagens = data.optInt("id_mensagens"),
+                            conteudo = data.optString("conteudo"),
+                            id_chat_room = data.optInt("id_chat_room"),
+                            id_usuario = data.optInt("id_usuario"),
+                            enviado_em = data.optString("enviado_em")
+                        )
+                        
+                        // Atualiza a lista de mensagens na thread principal
+                        coroutineScope.launch {
+                            mensagens = mensagens + novaMsg
+                        }
+                        
+                        Log.d("ChatPrivado", "Mensagem adicionada: ${novaMsg.conteudo}")
+                    } else {
+                        Log.e("ChatPrivado", "Formato de mensagem inválido: ${args.contentToString()}")
+                    }
+                } catch (e: Exception) {
+                    Log.e("ChatPrivado", "Erro ao processar mensagem do socket", e)
+                }
+            }
+            
+            // Configura listeners de erro e conexão
+            socket.on(Socket.EVENT_CONNECT) {
+                Log.d("ChatPrivado", "✅ Conectado ao servidor de sockets")
+            }
+            
+            socket.on(Socket.EVENT_DISCONNECT) {
+                Log.d("ChatPrivado", "❌ Desconectado do servidor de sockets")
+            }
+            
+            socket.on(Socket.EVENT_CONNECT_ERROR) { args ->
+                Log.e("ChatPrivado", "❌ Erro de conexão: ${args.contentToString()}")
+            }
+            
+        } catch (e: Exception) {
+            Log.e("ChatPrivado", "Erro na configuração do socket", e)
         }
     }
 

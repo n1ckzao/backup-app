@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Cores principais -->
+    <color name="primary">#8B80F8</color>
+    <color name="primary_variant">#6C63FF</color>
+    <color name="secondary">#FF8A80</color>
+    <color name="secondary_variant">#FF6B6B</color>
+    <color name="background">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="error">#CF6679</color>
+    
+    <!-- Cores de texto -->
+    <color name="on_primary">#000000</color>
+    <color name="on_secondary">#000000</color>
+    <color name="on_background">#FFFFFF</color>
+    <color name="on_surface">#E0E0E0</color>
+    <color name="on_error">#000000</color>
+    
+    <!-- Cores de destaque -->
+    <color name="accent">#00B8D4</color>
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FFC107</color>
+    
+    <!-- Tons de cinza -->
+    <color name="gray_100">#1F1F1F</color>
+    <color name="gray_200">#2D2D2D</color>
+    <color name="gray_300">#3D3D3D</color>
+    <color name="gray_400">#5C5C5C</color>
+    <color name="gray_500">#7B7B7B</color>
+    <color name="gray_600">#999999</color>
+    <color name="gray_700">#B3B3B3</color>
+    <color name="gray_800">#CCCCCC</color>
+    <color name="gray_900">#E6E6E6</color>
+    
+    <!-- Cores de fundo de mensagens -->
+    <color name="message_sent">#8B80F8</color>
+    <color name="message_received">#2D2D2D</color>
+    
+    <!-- Cores de status -->
+    <color name="online">#66BB6A</color>
+    <color name="offline">#9E9E9E</color>
+    <color name="away">#FFA000</color>
+    
+    <!-- Cores de botões -->
+    <color name="button_primary">#8B80F8</color>
+    <color name="button_primary_pressed">#6C63FF</color>
+    <color name="button_secondary">#FF8A80</color>
+    <color name="button_secondary_pressed">#FF6B6B</color>
+    
+    <!-- Cores de borda -->
+    <color name="border_light">#2D2D2D</color>
+    <color name="border_dark">#3D3D3D</color>
+    
+    <!-- Cores adicionais para Material3 -->
+    <color name="primary_container">@color/primary_variant</color>
+    <color name="on_primary_container">@color/on_primary</color>
+    <color name="secondary_container">@color/secondary_variant</color>
+    <color name="on_secondary_container">@color/on_secondary</color>
+    <color name="surface_variant">@color/gray_800</color>
+    <color name="on_surface_variant">@color/gray_300</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

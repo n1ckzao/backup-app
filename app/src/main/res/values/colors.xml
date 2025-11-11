@@ -1,10 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Cores principais -->
+    <color name="primary">#6C63FF</color>
+    <color name="primary_variant">#5A50E0</color>
+    <color name="secondary">#FF6B6B</color>
+    <color name="secondary_variant">#FF5252</color>
+    <color name="background">#F8F9FF</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="error">#FF5252</color>
+    
+    <!-- Cores de texto -->
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_secondary">#000000</color>
+    <color name="on_background">#1A1A2E</color>
+    <color name="on_surface">#1A1A2E</color>
+    <color name="on_error">#FFFFFF</color>
+    
+    <!-- Cores de destaque -->
+    <color name="accent">#00B8D4</color>
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FFC107</color>
+    
+    <!-- Tons de cinza -->
+    <color name="gray_100">#F5F5F5</color>
+    <color name="gray_200">#EEEEEE</color>
+    <color name="gray_300">#E0E0E0</color>
+    <color name="gray_400">#BDBDBD</color>
+    <color name="gray_500">#9E9E9E</color>
+    <color name="gray_600">#757575</color>
+    <color name="gray_700">#616161</color>
+    <color name="gray_800">#424242</color>
+    <color name="gray_900">#212121</color>
+    
+    <!-- Cores de fundo de mensagens -->
+    <color name="message_sent">#6C63FF</color>
+    <color name="message_received">#F1F0FF</color>
+    
+    <!-- Cores de status -->
+    <color name="online">#4CAF50</color>
+    <color name="offline">#9E9E9E</color>
+    <color name="away">#FFC107</color>
+    
+    <!-- Cores de botões -->
+    <color name="button_primary">#6C63FF</color>
+    <color name="button_primary_pressed">#5A50E0</color>
+    <color name="button_secondary">#FF6B6B</color>
+    <color name="button_secondary_pressed">#FF5252</color>
+    
+    <!-- Cores de borda -->
+    <color name="border_light">#E0E0E0</color>
+    <color name="border_dark">#424242</color>
+    
+    <!-- Cores adicionais para Material3 -->
+    <color name="primary_container">@color/primary_variant</color>
+    <color name="on_primary_container">@color/on_primary</color>
+    <color name="secondary_container">@color/secondary_variant</color>
+    <color name="on_secondary_container">@color/on_secondary</color>
+    <color name="surface_variant">@color/gray_100</color>
+    <color name="on_surface_variant">@color/gray_700</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
 </resources>
