@@ -24,6 +24,8 @@ import com.example.app_journey.model.ChatRoomPrivado
 import com.example.app_journey.service.RetrofitInstance
 import io.socket.client.IO
 import io.socket.client.Socket
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 @Composable
@@ -32,12 +34,15 @@ fun ConversasPrivadasScreen(navController: NavHostController, idUsuario: Int) {
 
     LaunchedEffect(idUsuario) {
         try {
-            val result = RetrofitInstance.chatPrivadoService.listarConversasPrivadas(idUsuario)
+            val result = withContext(Dispatchers.IO) {
+                RetrofitInstance.chatPrivadoService.listarConversasPrivadas(idUsuario)
+            }
             conversas = result.conversas
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
+
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(conversas) { sala ->

@@ -117,12 +117,16 @@ fun AppContent() {
                                         .size(36.dp)
                                         .clip(CircleShape)
                                         .clickable {
-                                            navController.navigate("home/{idUsuario}") {
-                                                popUpTo(navController.graph.startDestinationId) {
-                                                    inclusive = false
+                                            val idUsuario = SharedPrefHelper.recuperarIdUsuario(context)
+                                            if (idUsuario != null) {
+                                                navController.navigate("home/$idUsuario") {
+                                                    popUpTo(navController.graph.startDestinationId) {
+                                                        inclusive = false
+                                                    }
                                                 }
                                             }
                                         }
+
                                 ) {
                                     Image(
                                         painter = painterResource(id = R.drawable.logoclaro),

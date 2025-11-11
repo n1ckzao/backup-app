@@ -1,26 +1,27 @@
 package com.example.app_journey.screens
 
 import android.widget.Toast
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.*
 import androidx.navigation.NavHostController
 import com.example.app_journey.model.Area
 import com.example.app_journey.model.Grupo
@@ -42,11 +43,21 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
     var categoriaSelecionada by remember { mutableStateOf("Todas") }
     var expanded by remember { mutableStateOf(false) }
 
+    // Tutorial com apenas dois passos
+    var mostrarTutorial by remember { mutableStateOf(true) }
+    var tutorialStep by remember { mutableStateOf(0) } // 0 = criar grupo, 1 = primeiro card
+
+    var criarGrupoPos by remember { mutableStateOf(Offset.Zero) }
+    var cardPos by remember { mutableStateOf(Offset.Zero) }
+
     // Carregar grupos
     LaunchedEffect(Unit) {
         RetrofitFactory().getGrupoService().listarGrupos()
             .enqueue(object : Callback<GruposResult> {
-                override fun onResponse(call: Call<GruposResult>, response: Response<GruposResult>) {
+                override fun onResponse(
+                    call: Call<GruposResult>,
+                    response: Response<GruposResult>
+                ) {
                     if (response.isSuccessful) {
                         response.body()?.grupos?.let {
                             grupos.clear()
@@ -61,7 +72,7 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
             })
     }
 
-    // Carregar áreas (categorias)
+    // Carregar áreas
     LaunchedEffect(Unit) {
         RetrofitFactory().getAreaService().listarAreas()
             .enqueue(object : Callback<AreaResult> {
@@ -75,7 +86,8 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
                 }
 
                 override fun onFailure(call: Call<AreaResult>, t: Throwable) {
-                    Toast.makeText(context, "Erro ao carregar categorias", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Erro ao carregar categorias", Toast.LENGTH_SHORT)
+                        .show()
                 }
             })
     }
@@ -90,7 +102,7 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
         }
     }
 
-    // Layout da tela
+    // Layout principal
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -132,26 +144,23 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    val infiniteTransition = rememberInfiniteTransition()
-                    val glowAnim by infiniteTransition.animateFloat(
-                        initialValue = 8f,
-                        targetValue = 24f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(800),
-                            repeatMode = RepeatMode.Reverse
-                        )
-                    )
 
-
+                    // Botão + Criar Grupo
                     Button(
                         onClick = { navegacao.navigate("criar_grupo") },
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        modifier = Modifier.shadow(glowAnim.dp, shape = RoundedCornerShape(24.dp))
+                        modifier = Modifier
+                            .onGloballyPositioned { coords ->
+                                criarGrupoPos = coords.localToWindow(Offset.Zero)
+                            }
                     ) {
-                        Text("+ Criar Grupo", color = Color(0xFF341E9B), fontWeight = FontWeight.Bold)
+                        Text(
+                            "+ Criar Grupo",
+                            color = Color(0xFF341E9B),
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-
 
                     // Dropdown de categorias
                     Box {
@@ -160,7 +169,11 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
                             shape = RoundedCornerShape(24.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                         ) {
-                            Text("✔ $categoriaSelecionada", color = Color(0xFF341E9B), fontWeight = FontWeight.Bold)
+                            Text(
+                                "✔ $categoriaSelecionada",
+                                color = Color(0xFF341E9B),
+                                fontWeight = FontWeight.Bold
+                            )
                         }
 
                         DropdownMenu(
@@ -191,10 +204,73 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
 
                 LazyColumn {
                     items(gruposFiltrados) { grupo ->
-                        GrupoCard(grupo = grupo) {
-                            navegacao.navigate("grupoinfo/${grupo.id_grupo}")
-                        }
+                        GrupoCard(
+                            grupo = grupo,
+                            modifier = Modifier
+                                .onGloballyPositioned { coords ->
+                                    if (tutorialStep == 1 && cardPos == Offset.Zero) {
+                                        cardPos = coords.localToWindow(Offset.Zero)
+                                    }
+                                },
+                            onClick = { navegacao.navigate("grupoinfo/${grupo.id_grupo}") }
+                        )
                     }
+                }
+            }
+        }
+    }
+
+    // Overlay do tutorial (dois passos)
+    if (mostrarTutorial) {
+        val highlightOffset = if (tutorialStep == 0) criarGrupoPos else cardPos
+
+        if (highlightOffset != Offset.Zero) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .clickable {
+                        tutorialStep++
+                        if (tutorialStep > 1) mostrarTutorial = false
+                    }
+            ) {
+                val infiniteTransition = rememberInfiniteTransition()
+                val arrowOffset by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 10f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(500),
+                        repeatMode = RepeatMode.Reverse
+                    )
+                )
+
+                Column(
+                    modifier = Modifier
+                        .offset {
+                            IntOffset(
+                                highlightOffset.x.toInt() + 50,
+                                highlightOffset.y.toInt() - 60
+                            )
+                        }
+                        .width(200.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = null,
+                        tint = Color.Yellow,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .rotate(-120f) // seta para cima
+                            .offset(y = arrowOffset.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if (tutorialStep == 0) "Clique aqui para criar um grupo!" else "Entre neste grupo para ver mais",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
