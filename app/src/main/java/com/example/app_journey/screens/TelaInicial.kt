@@ -128,8 +128,8 @@ fun TelaInicial(navController: NavHostController) {
                     modifier = Modifier
                         .offset {
                             IntOffset(
-                                buttonPosition.x - 280,
-                                buttonPosition.y - 260 // ajusta para o texto acima do botão
+                                buttonPosition.x - 320,
+                                buttonPosition.y - 400 // ajusta para o texto acima do botão
                             )
                         }
                         .width(200.dp),
@@ -138,7 +138,7 @@ fun TelaInicial(navController: NavHostController) {
                     Text(
                         text = "Clique neste botão para entrar no app!",
                         color = Color.White,
-                        fontSize = 16.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )

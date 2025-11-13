@@ -72,6 +72,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
     implementation("com.google.code.gson:gson:2.9.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("com.getkeepsafe.taptargetview:taptargetview:1.13.3")
     implementation("uk.co.samuelwall:material-tap-target-prompt:3.0.0")
     implementation("io.socket:socket.io-client:2.1.0") {

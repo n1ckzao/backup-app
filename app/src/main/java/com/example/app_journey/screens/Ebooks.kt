@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.example.app_journey.ui.theme.PrimaryPurple
 import com.example.app_journey.ui.theme.White
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.ui.text.style.TextAlign
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,19 +32,36 @@ fun TelaEbooksScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Journey E-books") },
+                modifier = Modifier
+                    .height(48.dp)
+                    .padding(top = 4.dp), // levanta um pouco o conteúdo
+                title = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.TopStart // texto começa à esquerda
+                    ) {
+                        Text(
+                            text = "Journey E-books",
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryPurple),
                 actions = {
                     IconButton(onClick = onCriarClick) {
-                        Icon(Icons.Default.Add, contentDescription = "Criar", tint = White)
+                        Icon(Icons.Default.Add, contentDescription = "Criar", tint = Color.White)
                     }
                     IconButton(onClick = onCarrinhoClick) {
-                        Icon(Icons.Default.ShoppingCart, contentDescription = "Carrinho", tint = White)
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "Carrinho", tint = Color.White)
                     }
                 }
             )
         }
-    ) { padding ->
+    )
+    { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

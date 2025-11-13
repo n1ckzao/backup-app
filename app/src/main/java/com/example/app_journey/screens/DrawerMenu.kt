@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -63,7 +64,7 @@ fun DrawerMenu(
 
             DrawerItem(
                 text = "E-Books",
-                icon = Icons.Default.Info,
+                icon = Icons.Default.ShoppingCart,
                 onClick = { onOptionSelected("ebooks") }
             )
 

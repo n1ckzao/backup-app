@@ -22,12 +22,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.example.app_journey.model.Area
 import com.example.app_journey.model.Grupo
 import com.example.app_journey.model.GruposResult
 import com.example.app_journey.model.AreaResult
 import com.example.app_journey.service.RetrofitFactory
+import com.example.app_journey.utils.TutorialPrefs
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -37,27 +42,45 @@ import retrofit2.Response
 fun Home(navegacao: NavHostController, idUsuario: Int) {
     val context = LocalContext.current
 
+    val coroutineScope = rememberCoroutineScope()
+
     val grupos = remember { mutableStateListOf<Grupo>() }
     val areas = remember { mutableStateListOf<Area>() }
 
     var categoriaSelecionada by remember { mutableStateOf("Todas") }
     var expanded by remember { mutableStateOf(false) }
 
-    // Tutorial com apenas dois passos
-    var mostrarTutorial by remember { mutableStateOf(true) }
-    var tutorialStep by remember { mutableStateOf(0) } // 0 = criar grupo, 1 = primeiro card
-
+    // === Controle do tutorial ===
+    var mostrarTutorial by remember { mutableStateOf(false) }
+    var tutorialStep by remember { mutableStateOf(0) }
     var criarGrupoPos by remember { mutableStateOf(Offset.Zero) }
     var cardPos by remember { mutableStateOf(Offset.Zero) }
+    var tutorialLoaded by remember { mutableStateOf(false) }
 
-    // Carregar grupos
+
+
+
+    LaunchedEffect(criarGrupoPos) {
+        if (criarGrupoPos != Offset.Zero && !tutorialLoaded) {
+            val shown = TutorialPrefs.wasTutorialShown(context)
+            println("DEBUG → Tutorial já mostrado? $shown")
+            if (!shown) {
+                delay(300)
+                mostrarTutorial = true
+                println("DEBUG → mostrarTutorial = true")
+            }
+            tutorialLoaded = true
+        }
+    }
+
+
+
+
+    // === Carrega grupos ===
     LaunchedEffect(Unit) {
         RetrofitFactory().getGrupoService().listarGrupos()
             .enqueue(object : Callback<GruposResult> {
-                override fun onResponse(
-                    call: Call<GruposResult>,
-                    response: Response<GruposResult>
-                ) {
+                override fun onResponse(call: Call<GruposResult>, response: Response<GruposResult>) {
                     if (response.isSuccessful) {
                         response.body()?.grupos?.let {
                             grupos.clear()
@@ -72,7 +95,7 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
             })
     }
 
-    // Carregar áreas
+    // === Carrega áreas ===
     LaunchedEffect(Unit) {
         RetrofitFactory().getAreaService().listarAreas()
             .enqueue(object : Callback<AreaResult> {
@@ -86,35 +109,25 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
                 }
 
                 override fun onFailure(call: Call<AreaResult>, t: Throwable) {
-                    Toast.makeText(context, "Erro ao carregar categorias", Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(context, "Erro ao carregar categorias", Toast.LENGTH_SHORT).show()
                 }
             })
     }
 
     val areaSelecionadaObj = areas.find { it.area == categoriaSelecionada }
 
-    val gruposFiltrados = if (categoriaSelecionada == "Todas") {
-        grupos
-    } else {
-        grupos.filter { grupo ->
-            grupo.id_area == (areaSelecionadaObj?.id_area ?: -1)
-        }
+    val gruposFiltrados = if (categoriaSelecionada == "Todas") grupos else grupos.filter {
+        it.id_area == (areaSelecionadaObj?.id_area ?: -1)
     }
 
-    // Layout principal
+    // === Layout principal ===
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF6F7FF))
             .padding(16.dp)
     ) {
-        Text(
-            text = "Bem-vindo ao Journey!",
-            fontSize = 26.sp,
-            color = Color.Black,
-            fontWeight = FontWeight.Bold
-        )
+        Text("Bem-vindo ao Journey!", fontSize = 26.sp, color = Color.Black, fontWeight = FontWeight.Bold)
         Text(
             text = "Uma plataforma para mentoria e\naprendizado colaborativo",
             fontSize = 16.sp,
@@ -131,70 +144,46 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
             elevation = CardDefaults.cardElevation(8.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Grupos",
-                    fontSize = 22.sp,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
-
+                Text("Grupos", fontSize = 22.sp, color = Color.White, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-
-                    // Botão + Criar Grupo
+                    // === Botão Criar Grupo ===
                     Button(
                         onClick = { navegacao.navigate("criar_grupo") },
                         shape = RoundedCornerShape(24.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        modifier = Modifier
-                            .onGloballyPositioned { coords ->
+                        modifier = Modifier.onGloballyPositioned { coords ->
+                            if (criarGrupoPos == Offset.Zero) { // 👈 só pega a primeira vez
                                 criarGrupoPos = coords.localToWindow(Offset.Zero)
                             }
+                        }
                     ) {
-                        Text(
-                            "+ Criar Grupo",
-                            color = Color(0xFF341E9B),
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text("+ Criar Grupo", color = Color(0xFF341E9B), fontWeight = FontWeight.Bold)
                     }
 
-                    // Dropdown de categorias
+
+                    // === Dropdown ===
                     Box {
                         Button(
                             onClick = { expanded = !expanded },
                             shape = RoundedCornerShape(24.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                         ) {
-                            Text(
-                                "✔ $categoriaSelecionada",
-                                color = Color(0xFF341E9B),
-                                fontWeight = FontWeight.Bold
-                            )
+                            Text("✔ $categoriaSelecionada", color = Color(0xFF341E9B), fontWeight = FontWeight.Bold)
                         }
 
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Todas") },
-                                onClick = {
-                                    categoriaSelecionada = "Todas"
-                                    expanded = false
-                                }
-                            )
+                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            DropdownMenuItem(text = { Text("Todas") }, onClick = {
+                                categoriaSelecionada = "Todas"; expanded = false
+                            })
                             areas.forEach { area ->
-                                DropdownMenuItem(
-                                    text = { Text(area.area) },
-                                    onClick = {
-                                        categoriaSelecionada = area.area
-                                        expanded = false
-                                    }
-                                )
+                                DropdownMenuItem(text = { Text(area.area) }, onClick = {
+                                    categoriaSelecionada = area.area; expanded = false
+                                })
                             }
                         }
                     }
@@ -206,12 +195,11 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
                     items(gruposFiltrados) { grupo ->
                         GrupoCard(
                             grupo = grupo,
-                            modifier = Modifier
-                                .onGloballyPositioned { coords ->
-                                    if (tutorialStep == 1 && cardPos == Offset.Zero) {
-                                        cardPos = coords.localToWindow(Offset.Zero)
-                                    }
-                                },
+                            modifier = Modifier.onGloballyPositioned { coords ->
+                                if (cardPos == Offset.Zero) {
+                                    cardPos = coords.localToWindow(Offset.Zero)
+                                }
+                            },
                             onClick = { navegacao.navigate("grupoinfo/${grupo.id_grupo}") }
                         )
                     }
@@ -220,18 +208,27 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
         }
     }
 
-    // Overlay do tutorial (dois passos)
+    // === Overlay do tutorial ===
     if (mostrarTutorial) {
-        val highlightOffset = if (tutorialStep == 0) criarGrupoPos else cardPos
+        val highlightOffset = when (tutorialStep) {
+            0 -> criarGrupoPos
+            1 -> cardPos
+            else -> Offset.Zero
+        }
 
         if (highlightOffset != Offset.Zero) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .zIndex(10f)
                     .background(Color.Black.copy(alpha = 0.6f))
                     .clickable {
                         tutorialStep++
-                        if (tutorialStep > 1) mostrarTutorial = false
+                        if (tutorialStep > 1) {
+                            mostrarTutorial = false
+                            TutorialPrefs.saveTutorialShown(context)
+                            println("DEBUG → Tutorial salvo no DataStore")
+                        }
                     }
             ) {
                 val infiniteTransition = rememberInfiniteTransition()
@@ -248,11 +245,14 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
                     modifier = Modifier
                         .offset {
                             IntOffset(
-                                highlightOffset.x.toInt() + 50,
-                                highlightOffset.y.toInt() - 60
+                                x = highlightOffset.x.toInt() + 50,
+                                y = if (tutorialStep == 0)
+                                    highlightOffset.y.toInt() - 200
+                                else
+                                    highlightOffset.y.toInt() + 150
                             )
                         }
-                        .width(200.dp),
+                        .width(220.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Icon(
@@ -260,19 +260,27 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
                         contentDescription = null,
                         tint = Color.Yellow,
                         modifier = Modifier
-                            .size(36.dp)
-                            .rotate(-120f) // seta para cima
-                            .offset(y = arrowOffset.dp)
+                            .size(40.dp)
+                            .rotate(if (tutorialStep == 0) -120f else 60f)
+                            .offset(y = if (tutorialStep == 0) arrowOffset.dp else -arrowOffset.dp)
                     )
+
                     Spacer(modifier = Modifier.height(8.dp))
+
                     Text(
-                        text = if (tutorialStep == 0) "Clique aqui para criar um grupo!" else "Entre neste grupo para ver mais",
+                        text = if (tutorialStep == 0)
+                            "Clique neste botão para criar um grupo!"
+                        else
+                            "Agora clique em um grupo para ver mais detalhes!",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        fontSize = 20.sp
                     )
                 }
             }
         }
     }
 }
+
+
