@@ -15,17 +15,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app_journey.model.Ebook
-import com.example.app_journey.model.EbookResponseWrapper
 import com.example.app_journey.service.EbookService
+import com.example.app_journey.ui.theme.LightAccent
 import com.example.app_journey.ui.theme.PrimaryPurple
 import com.example.app_journey.ui.theme.White
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +37,7 @@ fun TelaEbooksScreen(
     var ebooks by remember { mutableStateOf(listOf<Ebook>()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var searchText by remember { mutableStateOf("") }
 
     // Chamada do backend
     LaunchedEffect(Unit) {
@@ -51,25 +51,11 @@ fun TelaEbooksScreen(
         }
     }
 
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(),
-                        contentAlignment = Alignment.TopStart
-                    ) {
-                        Text(
-                            text = "Journey E-books",
-                            color = White,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryPurple),
+                title = { Text("Journey E-books", color = White) },
+                navigationIcon = {},
                 actions = {
                     IconButton(onClick = onCriarClick) {
                         Icon(Icons.Default.Add, contentDescription = "Criar", tint = White)
@@ -77,9 +63,11 @@ fun TelaEbooksScreen(
                     IconButton(onClick = onCarrinhoClick) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Carrinho", tint = White)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryPurple)
             )
-        }
+        },
+        containerColor = LightAccent
     ) { padding ->
         Column(
             modifier = Modifier
@@ -88,14 +76,23 @@ fun TelaEbooksScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            // Campo de busca estilizado
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
-                placeholder = { Text("Pesquisar e-book") },
-                modifier = Modifier.fillMaxWidth(0.9f),
-                colors = TextFieldDefaults.colors(
+                value = searchText,
+                onValueChange = { searchText = it },
+                placeholder = { Text("Pesquisar e-book", color = PrimaryPurple.copy(alpha = 0.5f)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PrimaryPurple.copy(alpha = 0.3f),
+                    unfocusedBorderColor = PrimaryPurple.copy(alpha = 0.2f),
                     focusedContainerColor = White,
-                    unfocusedContainerColor = White
+                    unfocusedContainerColor = White,
+                    cursorColor = PrimaryPurple,
+                    focusedTextColor = PrimaryPurple,
+                    unfocusedTextColor = PrimaryPurple
                 )
             )
 
@@ -112,29 +109,46 @@ fun TelaEbooksScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(ebooks) { ebook ->
+                    items(ebooks.filter { it.titulo.contains(searchText, ignoreCase = true) }) { ebook ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onEbookClick(ebook.id_ebooks) },
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F1FF))
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = White),
+                            elevation = CardDefaults.cardElevation(4.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(180.dp),
-                                contentAlignment = Alignment.Center
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(120.dp)
-                                            .background(PrimaryPurple, shape = RoundedCornerShape(8.dp))
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(ebook.titulo, fontSize = 16.sp, color = Color.Black, textAlign = TextAlign.Center)
-                                    Text("R$ ${ebook.preco}", color = PrimaryPurple, fontSize = 14.sp)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(140.dp)
+                                        .background(PrimaryPurple, shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    // Espaço para capa do ebook
+                                    // Se tiver imagem, usar Image(...)
                                 }
+
+                                Spacer(Modifier.height(8.dp))
+
+                                Text(
+                                    ebook.titulo,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = PrimaryPurple,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+                                Text(
+                                    "R$ ${ebook.preco}",
+                                    color = PrimaryPurple,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
                             }
                         }
                     }

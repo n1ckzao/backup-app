@@ -31,6 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.app_journey.model.Usuario
 import com.example.app_journey.screens.*
 import com.example.app_journey.service.RetrofitInstance
+import com.example.app_journey.ui.theme.JourneyTheme
 import com.example.app_journey.utils.SharedPrefHelper
 import kotlinx.coroutines.launch
 
@@ -47,256 +48,262 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppContent() {
+    var isDarkTheme by remember { mutableStateOf(false) } // estado do tema
     var usuarioLogado by remember { mutableStateOf<Usuario?>(null) }
     var carregandoUsuario by remember { mutableStateOf(true) }
-    val idUsuarioLogado = usuarioLogado?.id_usuario ?: -1
 
+    val idUsuarioLogado = usuarioLogado?.id_usuario ?: -1
 
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    // Carregar usuário salvo
     LaunchedEffect(Unit) {
         val idSalvo = SharedPrefHelper.recuperarIdUsuario(context)
-        Log.d("MainActivity", "ID salvo: $idSalvo")
-
         if (idSalvo != null) {
             try {
                 val result = RetrofitInstance.usuarioService.getUsuarioPorIdSuspend(idSalvo)
-                Log.d("MainActivity", "Resposta API: $result")
                 if (!result.usuario.isNullOrEmpty()) {
                     usuarioLogado = result.usuario[0]
-                    Log.d("MainActivity", "Usuário carregado: ${usuarioLogado?.nome_completo}")
-                } else {
-                    Log.e("MainActivity", "Usuário não encontrado")
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Erro de rede: ${e.message}")
             }
-        } else {
-            Log.w("MainActivity", "id_usuario não encontrado")
         }
         carregandoUsuario = false
     }
 
-
-    // Observa a rota atual
+    // Observa rota atual
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val rotaAtual = navBackStackEntry.value?.destination?.route
 
     // Rotas que exibem AppBar + Drawer
-    val rotasComBarra = listOf("profile", "home/{idUsuario}", "criar_grupo", "editar_info/{idUsuario}", "meus_grupos", "ebooks")
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            DrawerMenu(
-                idUsuario = idUsuarioLogado,
-                onOptionSelected = { rota ->
-                    navController.navigate(rota)
-                    scope.launch { drawerState.close() }
-                }
-            )
-
-
-        },
-        gesturesEnabled = drawerState.isOpen
+    val rotasComBarra = listOf(
+        "profile", "home/{idUsuario}", "criar_grupo",
+        "editar_info/{idUsuario}", "meus_grupos", "ebooks"
     )
-    {
-        Scaffold(
-            topBar = {
-                if (rotaAtual in rotasComBarra) {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .clickable {
-                                            val idUsuario = SharedPrefHelper.recuperarIdUsuario(context)
-                                            if (idUsuario != null) {
-                                                navController.navigate("home/$idUsuario") {
-                                                    popUpTo(navController.graph.startDestinationId) {
-                                                        inclusive = false
+
+    // --- ENVOLVER NO THEME ---
+    JourneyTheme (darkTheme = isDarkTheme) {
+
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                DrawerMenu(
+                    idUsuario = idUsuarioLogado,
+                    onOptionSelected = { rota ->
+                        navController.navigate(rota)
+                        scope.launch { drawerState.close() }
+                    }
+                )
+            },
+            gesturesEnabled = drawerState.isOpen
+        ) {
+            Scaffold(
+                topBar = {
+                    if (rotaAtual in rotasComBarra) {
+                        CenterAlignedTopAppBar(
+                            title = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .clickable {
+                                                val idUsuario = SharedPrefHelper.recuperarIdUsuario(context)
+                                                if (idUsuario != null) {
+                                                    navController.navigate("home/$idUsuario") {
+                                                        popUpTo(navController.graph.startDestinationId) {
+                                                            inclusive = false
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
-
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.logoclaro),
-                                        contentDescription = "Logo",
-                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.logoclaro),
+                                            contentDescription = "Logo",
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+                                    Text(
+                                        "Journey",
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
-                                Text(
-                                    "Journey",
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                            },
+                            navigationIcon = {
+                                IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                    Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                                }
+                            },
+                            actions = {
+                                IconButton(onClick = { navController.navigate("profile") }) {
+                                    Icon(Icons.Default.AccountCircle, contentDescription = "Perfil")
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                // --- TOGGLE DE TEMA ---
+                                IconButton(onClick = { isDarkTheme = !isDarkTheme }) {
+                                    val icon = if (isDarkTheme) R.drawable.sun else R.drawable.moon
+                                    Icon(
+                                        painter = painterResource(id = icon),
+                                        contentDescription = "Alternar Tema"
+                                    )
+                                }
                             }
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                        )
+                    }
+                }
+            ) { paddingValues ->
+                NavHost(
+                    navController = navController,
+                    startDestination = "tela_inicial",
+                    modifier = Modifier.padding(paddingValues)
+                ) {
+                    // Rotas existentes
+                    composable("tela_inicial") { TelaInicial(navController) }
+                    composable("login") { Login(navController) }
+                    composable("cadastro") { Cadastro(navController) }
+                    composable("recuperacao_senha") { RecuperacaoSenha(navController) }
+                    composable("home/{idUsuario}") { backStack ->
+                        val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
+                        Home(navController, idUsuario)
+                    }
+
+                    composable("profile") { Perfil(navController) }
+                    composable("criar_grupo") { CriarGrupo(navegacao = navController) }
+                    composable("meus_grupos") { MeusGrupos(navController) }
+
+                    composable("editar_info/{idUsuario}") { backStackEntry ->
+                        val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
+                        EditarInfoWrapper(navController, idUsuario)
+                    }//edição do perfil
+
+                    composable(
+                        route = "grupoinfo/{id}",
+                    ) { backStackEntry ->
+                        val grupoId = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
+                        GrupoInfo(navController = navController, grupoId = grupoId)
+                    }
+                    composable("home_grupo/{grupoId}/{idUsuario}") { backStackEntry ->
+                        val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
+                        val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull() ?: 0
+                        HomeGrupo(navController = navController, grupoId = grupoId, idUsuario = idUsuario)
+                    }
+
+                    composable("calendario/{grupoId}/{idUsuario}") { backStackEntry ->
+                        val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
+                        val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull() ?: 0
+                        Calendario(navController = navController, grupoId = grupoId, idUsuario = idUsuario)
+                    }
+                    composable("meu_calendario") {
+                        val context = LocalContext.current
+                        val idUsuario = SharedPrefHelper.recuperarIdUsuario(context) ?: -1
+                        CalendarioPessoal(navController = navController, idUsuario = idUsuario)
+                    }
+
+                    composable("conversasPrivadas/{idUsuario}") { backStack ->
+                        val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
+                        ConversasPrivadasScreen(navController, idUsuario)
+                    }
+
+                    composable("chatPrivado/{id}/{nome}/{idUsuario}") { backStack ->
+                        val chatId = backStack.arguments?.getString("id")!!.toInt()
+                        val nome = backStack.arguments?.getString("nome")!!
+                        val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
+
+                        ChatPrivadoScreen(
+                            navController = navController,
+                            chatRoomId = chatId,
+                            nomeOutroUsuario = nome,
+                            idUsuarioAtual = idUsuario
+                        )
+                    }
+
+
+                    composable("chat_grupo/{grupoId}") { backStackEntry ->
+                        val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
+
+                        val context = LocalContext.current
+                        val sharedPreferences = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+                        val idUsuarioAtual = sharedPreferences.getInt("idUsuario", 0)
+
+                        ChatGrupo(
+                            navController = navController,
+                            grupoId = grupoId,
+                            idUsuarioAtual = idUsuarioAtual
+                        )
+                    }
+
+
+                    composable("verificar_email/{email}") { backStackEntry ->
+                        val email = backStackEntry.arguments?.getString("email")
+                        email?.let { VerificarEmail(navController, it) }
+                    }
+
+                    composable("redefinir_senha/{idUsuario}") { backStackEntry ->
+                        val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
+                        idUsuario?.let { RedefinirSenha(navController, it) }
+                    }
+
+                    //Ebooks
+
+                    // Tela inicial: lista de e-books
+                    composable("ebooks") {
+                        TelaEbooksScreen(
+                            ebookService = RetrofitInstance.ebookService,
+                            onEbookClick = { id ->
+                                navController.navigate("ebook_detalhe/$id")
+                            },
+                            onCriarClick = {
+                                navController.navigate("ebook_cadastrar")
+                            },
+                            onCarrinhoClick = {
+                                navController.navigate("ebook_carrinho")
                             }
-                        },
-                        actions = {
-                            IconButton(onClick = { navController.navigate("profile") }) {
-                                Icon(Icons.Default.AccountCircle, contentDescription = "Perfil")
+                        )
+                    }
+
+                    // Cadastro de e-book
+                    composable("ebook_cadastrar") {
+                        CadastrarEbookScreen(
+                            onCancelar = { navController.popBackStack() },
+                            onPublicar = {
+                                navController.navigate("ebook_confirmar_publicacao")
                             }
-                        }
-                    )
-                }
-            }
-        ) { paddingValues ->
-            NavHost(
-                navController = navController,
-                startDestination = "tela_inicial",
-                modifier = Modifier.padding(paddingValues)
-            ) {
-                // Rotas existentes
-                composable("tela_inicial") { TelaInicial(navController) }
-                composable("login") { Login(navController) }
-                composable("cadastro") { Cadastro(navController) }
-                composable("recuperacao_senha") { RecuperacaoSenha(navController) }
-                composable("home/{idUsuario}") { backStack ->
-                    val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
-                    Home(navController, idUsuario)
-                }
+                        )
+                    }
 
-                composable("profile") { Perfil(navController) }
-                composable("criar_grupo") { CriarGrupo(navegacao = navController) }
-                composable("meus_grupos") { MeusGrupos(navController) }
+                    // Detalhe do e-book
+                    composable("ebook_detalhe/{id}") { backStackEntry ->
+                        val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
+                        DetalheEbookScreen(
+                            onAdicionarCarrinho = {
+                                navController.navigate("ebook_carrinho")
+                            },
+                            onVoltar = { navController.popBackStack() }
+                        )
+                    }
 
-                composable("editar_info/{idUsuario}") { backStackEntry ->
-                    val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
-                    EditarInfoWrapper(navController, idUsuario)
-                }//edição do perfil
-
-                composable(
-                    route = "grupoinfo/{id}",
-                ) { backStackEntry ->
-                    val grupoId = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
-                    GrupoInfo(navController = navController, grupoId = grupoId)
-                }
-                composable("home_grupo/{grupoId}/{idUsuario}") { backStackEntry ->
-                    val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
-                    val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull() ?: 0
-                    HomeGrupo(navController = navController, grupoId = grupoId, idUsuario = idUsuario)
-                }
-
-                composable("calendario/{grupoId}/{idUsuario}") { backStackEntry ->
-                    val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
-                    val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull() ?: 0
-                    Calendario(navController = navController, grupoId = grupoId, idUsuario = idUsuario)
-                }
-                composable("meu_calendario") {
-                    val context = LocalContext.current
-                    val idUsuario = SharedPrefHelper.recuperarIdUsuario(context) ?: -1
-                    CalendarioPessoal(navController = navController, idUsuario = idUsuario)
-                }
-
-                composable("conversasPrivadas/{idUsuario}") { backStack ->
-                    val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
-                    ConversasPrivadasScreen(navController, idUsuario)
-                }
-
-                composable("chatPrivado/{id}/{nome}/{idUsuario}") { backStack ->
-                    val chatId = backStack.arguments?.getString("id")!!.toInt()
-                    val nome = backStack.arguments?.getString("nome")!!
-                    val idUsuario = backStack.arguments?.getString("idUsuario")!!.toInt()
-
-                    ChatPrivadoScreen(
-                        navController = navController,
-                        chatRoomId = chatId,
-                        nomeOutroUsuario = nome,
-                        idUsuarioAtual = idUsuario
-                    )
-                }
-
-
-                composable("chat_grupo/{grupoId}") { backStackEntry ->
-                    val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
-
-                    val context = LocalContext.current
-                    val sharedPreferences = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
-                    val idUsuarioAtual = sharedPreferences.getInt("idUsuario", 0)
-
-                    ChatGrupo(
-                        navController = navController,
-                        grupoId = grupoId,
-                        idUsuarioAtual = idUsuarioAtual
-                    )
-                }
-
-
-                composable("verificar_email/{email}") { backStackEntry ->
-                    val email = backStackEntry.arguments?.getString("email")
-                    email?.let { VerificarEmail(navController, it) }
-                }
-
-                composable("redefinir_senha/{idUsuario}") { backStackEntry ->
-                    val idUsuario = backStackEntry.arguments?.getString("idUsuario")?.toIntOrNull()
-                    idUsuario?.let { RedefinirSenha(navController, it) }
-                }
-
-                //Ebooks
-
-                // Tela inicial: lista de e-books
-                composable("ebooks") {
-                    TelaEbooksScreen(
-                        ebookService = RetrofitInstance.ebookService,
-                        onEbookClick = { id ->
-                            navController.navigate("ebook_detalhe/$id")
-                        },
-                        onCriarClick = {
-                            navController.navigate("ebook_cadastrar")
-                        },
-                        onCarrinhoClick = {
-                            navController.navigate("ebook_carrinho")
-                        }
-                    )
-                }
-
-                // Cadastro de e-book
-                composable("ebook_cadastrar") {
-                    CadastrarEbookScreen(
-                        onCancelar = { navController.popBackStack() },
-                        onPublicar = {
-                            navController.navigate("ebook_confirmar_publicacao")
-                        }
-                    )
-                }
-
-                // Detalhe do e-book
-                composable("ebook_detalhe/{id}") { backStackEntry ->
-                    val id = backStackEntry.arguments?.getString("id")?.toIntOrNull() ?: 0
-                    DetalheEbookScreen(
-                        onAdicionarCarrinho = {
-                            navController.navigate("ebook_carrinho")
-                        },
-                        onVoltar = { navController.popBackStack() }
-                    )
-                }
-
-                // Tela do carrinho
-                composable("ebook_carrinho") {
-                    CarrinhoScreen(
-                        onFinalizar = {
-                            navController.navigate("ebooks") {
-                                popUpTo("ebooks") { inclusive = true }
-                            }
-                        },
-                        onVoltar = { navController.popBackStack() }
-                    )
-                }
+                    // Tela do carrinho
+                    composable("ebook_carrinho") {
+                        CarrinhoScreen(
+                            onFinalizar = {
+                                navController.navigate("ebooks") {
+                                    popUpTo("ebooks") { inclusive = true }
+                                }
+                            },
+                            onVoltar = { navController.popBackStack() }
+                        )
+                    }
                 }
             }
         }
     }
+}

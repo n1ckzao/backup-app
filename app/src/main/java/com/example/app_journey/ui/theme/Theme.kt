@@ -38,19 +38,41 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun JouneyperfilTheme(
+fun JourneyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (darkTheme) dynamicDarkColorScheme(context)
+            else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> darkColorScheme(
+            primary = PrimaryPurple,
+            secondary = PurpleLighter,
+            tertiary = PurpleMedium,
+            background = ReallyDarkPrimaryPurple,  // fundo escuro
+            surface = DarkPrimaryPurple,
+            onPrimary = White,
+            onSecondary = White,
+            onTertiary = White,
+            onBackground = White,
+            onSurface = White
+        )
+        else -> lightColorScheme(
+            primary = PrimaryPurple,
+            secondary = PurpleMedium,
+            tertiary = PurpleLighter,
+            background = LightAccent,            // fundo claro
+            surface = BackgroundWhite,
+            onPrimary = White,
+            onSecondary = White,
+            onTertiary = White,
+            onBackground = DarkPrimaryPurple,
+            onSurface = DarkPrimaryPurple
+        )
     }
 
     MaterialTheme(

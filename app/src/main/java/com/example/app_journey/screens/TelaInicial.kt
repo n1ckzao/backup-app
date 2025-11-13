@@ -64,7 +64,7 @@ fun TelaInicial(navController: NavHostController) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Começa sua\naventura com\nJOURNEY!",
+                text = "Comece sua\naventura com\nJourney!",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 32.sp,
@@ -115,57 +115,56 @@ fun TelaInicial(navController: NavHostController) {
             }
         }
 
-        // Overlay de tutorial
-        if (mostrarTutorial) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.6f))
-                    .clickable { mostrarTutorial = false } // fecha ao tocar
-            ) {
-                // Texto explicativo e seta
-                Column(
-                    modifier = Modifier
-                        .offset {
-                            IntOffset(
-                                buttonPosition.x - 320,
-                                buttonPosition.y - 400 // ajusta para o texto acima do botão
-                            )
-                        }
-                        .width(200.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Clique neste botão para entrar no app!",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Seta animada
-                    val infiniteTransition = rememberInfiniteTransition()
-                    val arrowOffset by infiniteTransition.animateFloat(
-                        initialValue = 0f,
-                        targetValue = 10f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(500, easing = LinearEasing),
-                            repeatMode = RepeatMode.Reverse
-                        )
-                    )
-
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = "Seta tutorial",
-                        tint = Color.Yellow,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .rotate(45f)
-                            .offset(y = arrowOffset.dp)
-                    )
-                }
-            }
-        }
+//        // Overlay de tutorial
+//        if (mostrarTutorial) {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .background(Color.Black.copy(alpha = 0.6f))
+//                    .clickable { mostrarTutorial = false } // fecha ao tocar
+//            ) {
+//                // Texto explicativo e seta
+//                Column(
+//                    modifier = Modifier
+//                        .offset {
+//                            IntOffset(
+//                                buttonPosition.x - 320,
+//                                buttonPosition.y - 400 // ajusta para o texto acima do botão
+//                            )
+//                        }
+//                        .width(200.dp),
+//                    horizontalAlignment = Alignment.CenterHorizontally
+//                ) {
+//                    Text(
+//                        text = "Clique neste botão para entrar no app!",
+//                        color = Color.White,
+//                        fontSize = 20.sp,
+//                        fontWeight = FontWeight.Bold,
+//                        textAlign = TextAlign.Center
+//                    )
+//                    Spacer(modifier = Modifier.height(8.dp))
+//
+//                    val infiniteTransition = rememberInfiniteTransition()
+//                    val arrowOffset by infiniteTransition.animateFloat(
+//                        initialValue = 0f,
+//                        targetValue = 10f,
+//                        animationSpec = infiniteRepeatable(
+//                            animation = tween(500, easing = LinearEasing),
+//                            repeatMode = RepeatMode.Reverse
+//                        )
+//                    )
+//
+//                    Icon(
+//                        imageVector = Icons.Default.ArrowForward,
+//                        contentDescription = "Seta tutorial",
+//                        tint = Color.Yellow,
+//                        modifier = Modifier
+//                            .size(36.dp)
+//                            .rotate(45f)
+//                            .offset(y = arrowOffset.dp)
+//                    )
+//                }
+//            }
+//        }
     }
 }

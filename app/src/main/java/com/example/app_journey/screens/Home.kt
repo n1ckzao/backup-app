@@ -208,79 +208,79 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
         }
     }
 
-    // === Overlay do tutorial ===
-    if (mostrarTutorial) {
-        val highlightOffset = when (tutorialStep) {
-            0 -> criarGrupoPos
-            1 -> cardPos
-            else -> Offset.Zero
-        }
-
-        if (highlightOffset != Offset.Zero) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .zIndex(10f)
-                    .background(Color.Black.copy(alpha = 0.6f))
-                    .clickable {
-                        tutorialStep++
-                        if (tutorialStep > 1) {
-                            mostrarTutorial = false
-                            TutorialPrefs.saveTutorialShown(context)
-                            println("DEBUG → Tutorial salvo no DataStore")
-                        }
-                    }
-            ) {
-                val infiniteTransition = rememberInfiniteTransition()
-                val arrowOffset by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 10f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(500),
-                        repeatMode = RepeatMode.Reverse
-                    )
-                )
-
-                Column(
-                    modifier = Modifier
-                        .offset {
-                            IntOffset(
-                                x = highlightOffset.x.toInt() + 50,
-                                y = if (tutorialStep == 0)
-                                    highlightOffset.y.toInt() - 200
-                                else
-                                    highlightOffset.y.toInt() + 150
-                            )
-                        }
-                        .width(220.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = null,
-                        tint = Color.Yellow,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .rotate(if (tutorialStep == 0) -120f else 60f)
-                            .offset(y = if (tutorialStep == 0) arrowOffset.dp else -arrowOffset.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = if (tutorialStep == 0)
-                            "Clique neste botão para criar um grupo!"
-                        else
-                            "Agora clique em um grupo para ver mais detalhes!",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        fontSize = 20.sp
-                    )
-                }
-            }
-        }
-    }
+//    // === Overlay do tutorial ===
+//    if (mostrarTutorial) {
+//        val highlightOffset = when (tutorialStep) {
+//            0 -> criarGrupoPos
+//            1 -> cardPos
+//            else -> Offset.Zero
+//        }
+//
+//        if (highlightOffset != Offset.Zero) {
+//            Box(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .zIndex(10f)
+//                    .background(Color.Black.copy(alpha = 0.6f))
+//                    .clickable {
+//                        tutorialStep++
+//                        if (tutorialStep > 1) {
+//                            mostrarTutorial = false
+//                            TutorialPrefs.saveTutorialShown(context)
+//                            println("DEBUG → Tutorial salvo no DataStore")
+//                        }
+//                    }
+//            ) {
+//                val infiniteTransition = rememberInfiniteTransition()
+//                val arrowOffset by infiniteTransition.animateFloat(
+//                    initialValue = 0f,
+//                    targetValue = 10f,
+//                    animationSpec = infiniteRepeatable(
+//                        animation = tween(500),
+//                        repeatMode = RepeatMode.Reverse
+//                    )
+//                )
+//
+//                Column(
+//                    modifier = Modifier
+//                        .offset {
+//                            IntOffset(
+//                                x = highlightOffset.x.toInt() + 50,
+//                                y = if (tutorialStep == 0)
+//                                    highlightOffset.y.toInt() - 200
+//                                else
+//                                    highlightOffset.y.toInt() + 150
+//                            )
+//                        }
+//                        .width(220.dp),
+//                    horizontalAlignment = Alignment.CenterHorizontally
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Default.ArrowForward,
+//                        contentDescription = null,
+//                        tint = Color.Yellow,
+//                        modifier = Modifier
+//                            .size(40.dp)
+//                            .rotate(if (tutorialStep == 0) -120f else 60f)
+//                            .offset(y = if (tutorialStep == 0) arrowOffset.dp else -arrowOffset.dp)
+//                    )
+//
+//                    Spacer(modifier = Modifier.height(8.dp))
+//
+//                    Text(
+//                        text = if (tutorialStep == 0)
+//                            "Clique neste botão para criar um grupo!"
+//                        else
+//                            "Agora clique em um grupo para ver mais detalhes!",
+//                        color = Color.White,
+//                        fontWeight = FontWeight.Bold,
+//                        textAlign = TextAlign.Center,
+//                        fontSize = 20.sp
+//                    )
+//                }
+//            }
+//        }
+//    }
 }
 
 

@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.app_journey.ui.theme.JouneyperfilTheme
 import com.example.app_journey.ui.theme.White
 
 
@@ -108,16 +107,6 @@ fun DrawerItem(
             text = text,
             color = textColor,
             fontSize = 16.sp
-        )
-    }
-}
-@Preview(showBackground = true)
-@Composable
-fun DrawerMenuPreview() {
-    JouneyperfilTheme {
-        DrawerMenu(
-            onOptionSelected = {},
-            idUsuario = 1
         )
     }
 }
