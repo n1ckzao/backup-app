@@ -251,6 +251,7 @@ fun AppContent() {
                 // Tela inicial: lista de e-books
                 composable("ebooks") {
                     TelaEbooksScreen(
+                        ebookService = RetrofitInstance.ebookService,
                         onEbookClick = { id ->
                             navController.navigate("ebook_detalhe/$id")
                         },

@@ -9,42 +9,62 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.app_journey.model.Ebook
+import com.example.app_journey.model.EbookResponseWrapper
+import com.example.app_journey.service.EbookService
 import com.example.app_journey.ui.theme.PrimaryPurple
 import com.example.app_journey.ui.theme.White
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.ui.text.style.TextAlign
-
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TelaEbooksScreen(
+    ebookService: EbookService,
     onEbookClick: (Int) -> Unit,
     onCriarClick: () -> Unit,
     onCarrinhoClick: () -> Unit
 ) {
+    var ebooks by remember { mutableStateOf(listOf<Ebook>()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Chamada do backend
+    LaunchedEffect(Unit) {
+        try {
+            val response = ebookService.getTodosEbooks()
+            ebooks = response.ebooks ?: emptyList()
+        } catch (e: Exception) {
+            errorMessage = e.localizedMessage
+        } finally {
+            isLoading = false
+        }
+    }
+
+
     Scaffold(
         topBar = {
             TopAppBar(
-                modifier = Modifier
-                    .height(48.dp)
-                    .padding(top = 4.dp), // levanta um pouco o conteúdo
                 title = {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .fillMaxHeight(),
-                        contentAlignment = Alignment.TopStart // texto começa à esquerda
+                        contentAlignment = Alignment.TopStart
                     ) {
                         Text(
                             text = "Journey E-books",
-                            color = Color.White,
+                            color = White,
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -52,16 +72,15 @@ fun TelaEbooksScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryPurple),
                 actions = {
                     IconButton(onClick = onCriarClick) {
-                        Icon(Icons.Default.Add, contentDescription = "Criar", tint = Color.White)
+                        Icon(Icons.Default.Add, contentDescription = "Criar", tint = White)
                     }
                     IconButton(onClick = onCarrinhoClick) {
-                        Icon(Icons.Default.ShoppingCart, contentDescription = "Carrinho", tint = Color.White)
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "Carrinho", tint = White)
                     }
                 }
             )
         }
-    )
-    { padding ->
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -73,43 +92,49 @@ fun TelaEbooksScreen(
                 value = "",
                 onValueChange = {},
                 placeholder = { Text("Pesquisar e-book") },
-                modifier = Modifier.fillMaxWidth(0.9f), // centralizado e responsivo
+                modifier = Modifier.fillMaxWidth(0.9f),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = White,
                     unfocusedContainerColor = White
                 )
             )
+
             Spacer(Modifier.height(16.dp))
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(6) { index ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onEbookClick(index) },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F1FF))
-                    ) {
-                        Box(
+
+            if (isLoading) {
+                Text("Carregando e-books...", color = PrimaryPurple)
+            } else if (errorMessage != null) {
+                Text(errorMessage ?: "Erro desconhecido", color = Color.Red)
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(ebooks) { ebook ->
+                        Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(180.dp), // altura do card
-                            contentAlignment = Alignment.Center
+                                .clickable { onEbookClick(ebook.id_ebooks) },
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF4F1FF))
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(120.dp)
-                                        .background(PrimaryPurple, shape = RoundedCornerShape(8.dp))
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text("E-book $index", fontSize = 16.sp, color = Color.Black)
-                                Text("R$ ${index * 10},00", color = PrimaryPurple, fontSize = 14.sp)
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(120.dp)
+                                            .background(PrimaryPurple, shape = RoundedCornerShape(8.dp))
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(ebook.titulo, fontSize = 16.sp, color = Color.Black, textAlign = TextAlign.Center)
+                                    Text("R$ ${ebook.preco}", color = PrimaryPurple, fontSize = 14.sp)
+                                }
                             }
                         }
                     }
