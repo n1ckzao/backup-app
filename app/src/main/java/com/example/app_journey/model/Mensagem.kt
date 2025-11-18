@@ -8,10 +8,12 @@ data class MensagemResponse(
 )
 
 data class Mensagem(
-    val id_mensagens: Int,
+    val id_mensagens: Int? = null,
     val conteudo: String,
-    val enviado_em: String?,
-    val id_chat: Int,
-    val id_usuario: Int
+    val id_chat_room: Int,
+    val id_usuario: Int,
+    val enviado_em: String? = null,
+    var nome_completo: String? = null,
+    var foto_perfil: String? = null,
+    val id_chat: Int
 )
-

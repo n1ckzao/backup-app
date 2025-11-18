@@ -11,4 +11,3 @@ data class ApiResponse(
     val status_code: Int,
     val message: String
 )
-

@@ -41,7 +41,7 @@ fun ChatGrupo(
     grupoId: Int,
     idUsuarioAtual: Int
 )
- {
+{
     var mensagens by remember {
         mutableStateOf(
             listOf(
@@ -104,7 +104,7 @@ fun ChatGrupo(
                     horizontalArrangement = if (msg.isUser) Arrangement.End else Arrangement.Start
                 ) {
 
-                if (!msg.isUser) {
+                    if (!msg.isUser) {
                         Box(
                             modifier = Modifier
                                 .size(24.dp)

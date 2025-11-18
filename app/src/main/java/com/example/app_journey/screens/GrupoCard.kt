@@ -20,11 +20,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.app_journey.model.Grupo
 
 @Composable
-fun GrupoCard(grupo: Grupo, onClick: () -> Unit, modifier: Modifier) {
+fun GrupoCard(grupo: Grupo, onClick: () -> Unit) {
     val pressed = remember { mutableStateOf(false) }
     val scaleCard by animateFloatAsState(if (pressed.value) 1.20f else 1f)
 
