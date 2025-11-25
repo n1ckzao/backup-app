@@ -18,34 +18,34 @@ import retrofit2.http.Path
 
 interface EbookService {
     // GET todos os eBooks
-    @GET("v1/journey/ebook")
+    @GET("ebook")
     suspend fun getTodosEbooks(): EbookResponseWrapper<List<Ebook>>
 
     // GET eBook por ID
-    @GET("v1/journey/ebook/{id}")
+    @GET("ebook/{id}")
     suspend fun getEbookPorId(@Path("id") id: Int): EbookResponseWrapper<Ebook>
 
     // POST criar novo eBook
-    @POST("v1/journey/ebook")
+    @POST("ebook")
     suspend fun criarEbook(@Body ebook: EbookRequest): EbookResponseWrapper<Any>
 
     // PUT atualizar eBook
-    @PUT("v1/journey/ebook/{id}")
+    @PUT("ebook/{id}")
     suspend fun atualizarEbook(@Path("id") id: Int, @Body ebook: EbookRequest): EbookResponseWrapper<Any>
 
     // DELETE eBook
-    @DELETE("v1/journey/ebook/{id}")
+    @DELETE("ebook/{id}")
     suspend fun deleteEbook(@Path("id") id: Int): EbookResponseWrapper<Any>
 
     // GET todas categorias
-    @GET("v1/journey/categoria")
+    @GET("categoria")
     suspend fun getCategorias(): EbookResponseWrapper<List<Categoria>>
 
     // POST vincular categoria ao eBook
-    @POST("v1/journey/ebook/categoria")
+    @POST("ebook/categoria")
     suspend fun vincularCategoria(@Body categoriaEbook: CategoriaEbookRequest): EbookResponseWrapper<Any>
 
     // DELETE categoria do eBook
-    @DELETE("v1/journey/ebook/categoria/{id}")
+    @DELETE("ebook/categoria/{id}")
     suspend fun deleteCategoriaEbook(@Path("id") id: Int): EbookResponseWrapper<Any>
 }

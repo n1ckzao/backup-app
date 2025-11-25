@@ -1,4 +1,3 @@
-// MainActivity.kt
 package com.example.app_journey
 
 import android.content.Context
@@ -87,6 +86,7 @@ fun AppContent() {
     // Rotas que exibem AppBar + Drawer
     val rotasComBarra = listOf("profile", "home/{idUsuario}", "criar_grupo", "editar_info/{idUsuario}", "meus_grupos", "ebooks")
 
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -117,12 +117,13 @@ fun AppContent() {
                                         .size(36.dp)
                                         .clip(CircleShape)
                                         .clickable {
-                                            navController.navigate("home/{idUsuario}") {
+                                            navController.navigate("home/$idUsuarioLogado") {
                                                 popUpTo(navController.graph.startDestinationId) {
                                                     inclusive = false
                                                 }
                                             }
                                         }
+
                                 ) {
                                     Image(
                                         painter = painterResource(id = R.drawable.logoclaro),
@@ -256,9 +257,10 @@ fun AppContent() {
                         onCarrinhoClick = {
                             navController.navigate("ebook_carrinho")
                         },
-                        ebookService = TODO()
+                        ebookService = RetrofitInstance.ebookService
                     )
                 }
+
 
                 // Cadastro de e-book
                 composable("ebook_cadastrar") {
