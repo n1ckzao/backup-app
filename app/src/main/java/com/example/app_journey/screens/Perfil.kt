@@ -5,11 +5,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,8 +43,7 @@ fun Perfil(navController: NavHostController) {
     LaunchedEffect(idUsuario) {
         if (idUsuario != -1) {
             loading.value = true
-            val usuarioService = RetrofitFactory().getUsuarioService()
-            usuarioService.getUsuarioPorId(idUsuario)
+            RetrofitFactory().getUsuarioService().getUsuarioPorId(idUsuario)
                 .enqueue(object : Callback<UsuarioResult> {
                     override fun onResponse(
                         call: Call<UsuarioResult>,
@@ -53,167 +52,163 @@ fun Perfil(navController: NavHostController) {
                         loading.value = false
                         if (response.isSuccessful) {
                             val result = response.body()
-                            if (result != null && result.usuario != null && result.usuario.isNotEmpty()) {
-                                usuarioLogado.value = result.usuario[0] // pega o primeiro usuário
-                                errorMessage.value = null
-                            } else {
-                                errorMessage.value = "Usuário não encontrado"
-                            }
+                            usuarioLogado.value = result?.usuario?.firstOrNull()
                         } else {
-                            errorMessage.value = "Erro ao carregar usuário: ${response.code()}"
+                            errorMessage.value = "Erro ao carregar usuário."
                         }
                     }
-
                     override fun onFailure(call: Call<UsuarioResult>, t: Throwable) {
                         loading.value = false
                         errorMessage.value = "Erro de rede: ${t.message}"
                     }
                 })
-        } else {
-            errorMessage.value = "Usuário não logado"
-        }
+        } else errorMessage.value = "Usuário não logado"
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(PrimaryPurple)
-            .padding(16.dp)
+            .padding(20.dp)
     ) {
         when {
-            loading.value -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            loading.value -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+
             errorMessage.value != null -> Text(
-                text = errorMessage.value ?: "Erro desconhecido",
+                text = errorMessage.value ?: "Erro",
                 color = Color.Red,
                 modifier = Modifier.align(Alignment.Center)
             )
-            usuarioLogado.value != null -> {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    CardInfoPessoais(
-                        profileImageUri = usuarioLogado.value!!.foto_perfil?.let { Uri.parse(it) },
-                        nome = usuarioLogado.value!!.nome_completo,
-                        email = usuarioLogado.value!!.email,
-                        onSelectImage = {},
-                        onEditClick = {
-                            navController.navigate("editar_info/${idUsuario}")
 
-                        }
-                    )
-                    CardBio(
-                        descricao = usuarioLogado.value!!.descricao ?: "",
-                        onEditClick = {
-                            navController.navigate("editar_info/${idUsuario}")
-                        }
-                    )
-                }
-            }
+            usuarioLogado.value != null -> PerfilContent(
+                usuario = usuarioLogado.value!!,
+                idUsuario = idUsuario,
+                navController = navController
+            )
         }
     }
 }
 
 @Composable
-fun CardInfoPessoais(
-    profileImageUri: Uri?,
-    nome: String?,
-    email: String?,
-    onSelectImage: () -> Unit,
-    onEditClick: () -> Unit
-) {
+fun PerfilContent(usuario: Usuario, idUsuario: Int, navController: NavHostController) {
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+
+        Spacer(Modifier.height(16.dp))
+
+        // FOTO DO PERFIL
+        Box(contentAlignment = Alignment.Center) {
+            if (!usuario.foto_perfil.isNullOrEmpty()) {
+                Image(
+                    painter = rememberAsyncImagePainter(usuario.foto_perfil),
+                    contentDescription = "Foto de perfil",
+                    modifier = Modifier
+                        .size(150.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Foto padrão",
+                    tint = Color.White,
+                    modifier = Modifier.size(150.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // NOME
+        Text(
+            text = usuario.nome_completo ?: "Usuário",
+            color = Color.White,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(Modifier.height(4.dp))
+
+        // EMAIL
+        Text(
+            text = usuario.email ?: "",
+            color = Color.White.copy(0.8f),
+            fontSize = 16.sp
+        )
+
+        Spacer(Modifier.height(30.dp))
+
+        // CARD DE INFORMAÇÕES
+        CardInformacoes(usuario, onEditClick = {
+            navController.navigate("editar_info/${idUsuario}")
+        })
+
+        Spacer(Modifier.height(20.dp))
+
+        // CARD BIO
+        CardBiografia(usuario.descricao ?: "", onEditClick = {
+            navController.navigate("editar_info/${idUsuario}")
+        })
+    }
+}
+
+@Composable
+fun CardInformacoes(usuario: Usuario, onEditClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = PurpleDarker)
+        colors = CardDefaults.cardColors(containerColor = PurpleDarker),
+        elevation = CardDefaults.cardElevation(8.dp),
+        shape = RoundedCornerShape(20.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(Modifier.padding(20.dp)) {
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    "Informações pessoais",
-                    color = White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Button(
-                    onClick = onEditClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = PurpleLighter)
-                ) {
-                    Text("Editar", color = Color(0xFF341E9B))
+                Text("Informações pessoais", color = White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+
+                IconButton(onClick = onEditClick) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = PurpleLighter)
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Column (
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ){
-                if (profileImageUri != null) {
-                    Image(
-                        painter = rememberAsyncImagePainter(profileImageUri),
-                        contentDescription = "Avatar",
-                        modifier = Modifier
-                            .size(128.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.AccountCircle,
-                        contentDescription = "Avatar",
-                        tint = White,
-                        modifier = Modifier.size(64.dp)
-                    )
-                }
-            }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            InfoRow("Nome completo", nome)
-            InfoRow("Email", email)
+            InfoRow("Nome completo", usuario.nome_completo)
+            InfoRow("Email", usuario.email)
         }
     }
 }
 
 @Composable
-fun CardBio(onEditClick: () -> Unit, descricao: String) {
+fun CardBiografia(descricao: String, onEditClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = PurpleDarker)
+        colors = CardDefaults.cardColors(containerColor = PurpleDarker),
+        elevation = CardDefaults.cardElevation(8.dp),
+        shape = RoundedCornerShape(20.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(Modifier.padding(20.dp)) {
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    "Biografia",
-                    color = White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Button(
-                    onClick = onEditClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = PurpleLighter)
-                ) {
-                    Text("Editar", color = Color(0xFF341E9B))
+                Text("Biografia", color = White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                IconButton(onClick = onEditClick) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = PurpleLighter)
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
             Text(
-                text = descricao.ifBlank { "Nenhuma biografia cadastrada" },
+                text = descricao.ifBlank { "Nenhuma biografia cadastrada." },
                 color = White,
                 fontSize = 14.sp
             )
@@ -223,16 +218,9 @@ fun CardBio(onEditClick: () -> Unit, descricao: String) {
 
 @Composable
 fun InfoRow(label: String, value: String?) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = "$label:", color = White, fontWeight = FontWeight.Medium)
-        if (value != null) {
-            Text(text = value, color = White)
-        }
+    Column(Modifier.padding(vertical = 6.dp)) {
+        Text(label, color = White.copy(0.7f), fontSize = 13.sp)
+        Text(value ?: "", color = White, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Spacer(Modifier.height(4.dp))
     }
 }
-

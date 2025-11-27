@@ -2,11 +2,13 @@
 package com.example.app_journey
 
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -35,6 +37,7 @@ import com.example.app_journey.utils.SharedPrefHelper
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -44,6 +47,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppContent() {
@@ -117,11 +121,14 @@ fun AppContent() {
                                         .size(36.dp)
                                         .clip(CircleShape)
                                         .clickable {
-                                            navController.navigate("home/{idUsuario}") {
-                                                popUpTo(navController.graph.startDestinationId) {
-                                                    inclusive = false
+                                            if (idUsuarioLogado != -1) {
+                                                navController.navigate("home/$idUsuarioLogado") {
+                                                    popUpTo(navController.graph.startDestinationId) {
+                                                        inclusive = false
+                                                    }
                                                 }
                                             }
+
                                         }
                                 ) {
                                     Image(
@@ -255,7 +262,8 @@ fun AppContent() {
                         },
                         onCarrinhoClick = {
                             navController.navigate("ebook_carrinho")
-                        }
+                        },
+                        ebookService = RetrofitInstance.ebookService
                     )
                 }
 

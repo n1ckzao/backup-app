@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,7 +19,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.app_journey.ui.theme.JouneyperfilTheme
 import com.example.app_journey.ui.theme.White
 
 
@@ -63,7 +63,7 @@ fun DrawerMenu(
 
             DrawerItem(
                 text = "E-Books",
-                icon = Icons.Default.Info,
+                icon = Icons.Default.ShoppingCart,
                 onClick = { onOptionSelected("ebooks") }
             )
 
@@ -107,16 +107,6 @@ fun DrawerItem(
             text = text,
             color = textColor,
             fontSize = 16.sp
-        )
-    }
-}
-@Preview(showBackground = true)
-@Composable
-fun DrawerMenuPreview() {
-    JouneyperfilTheme {
-        DrawerMenu(
-            onOptionSelected = {},
-            idUsuario = 1
         )
     }
 }

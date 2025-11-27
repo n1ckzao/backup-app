@@ -32,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GrupoInfo(
     navController: NavHostController,
@@ -41,15 +42,12 @@ fun GrupoInfo(
     val scope = rememberCoroutineScope()
     val idUsuario = SharedPrefHelper.recuperarIdUsuario(context) ?: -1
 
-    Log.d("GrupoInfo", "🟣 grupoId recebido: $grupoId")
-
     var grupo by remember { mutableStateOf<com.example.app_journey.model.Grupo?>(null) }
     var participando by remember { mutableStateOf(false) }
     var carregando by remember { mutableStateOf(false) }
     var carregandoDados by remember { mutableStateOf(true) }
     var erroMsg by remember { mutableStateOf<String?>(null) }
 
-    // Buscar dados do grupo
     LaunchedEffect(grupoId) {
         if (grupoId <= 0) {
             carregandoDados = false
@@ -57,197 +55,212 @@ fun GrupoInfo(
             return@LaunchedEffect
         }
 
-        carregandoDados = true
-        erroMsg = null
         try {
             withContext(Dispatchers.IO) {
                 val response = RetrofitInstance.grupoService.getGrupoById(grupoId).execute()
                 if (response.isSuccessful) {
                     val wrapper = response.body()
-                    if (wrapper != null && wrapper.grupo.isNotEmpty()) {
-                        grupo = wrapper.grupo[0] // pega o primeiro grupo do array
-                        Log.d("GrupoInfo", "✅ Grupo carregado: $grupo")
-                    } else {
-                        erroMsg = "Grupo não encontrado"
-                    }
+                    grupo = wrapper?.grupo?.firstOrNull()
                 } else {
                     erroMsg = "Erro ao carregar grupo: ${response.code()}"
                 }
             }
         } catch (e: Exception) {
-            erroMsg = "Erro: ${e.localizedMessage ?: "desconhecido"}"
+            erroMsg = "Erro: ${e.localizedMessage}"
         } finally {
             carregandoDados = false
         }
     }
 
-    // Valores fallback
     val nome = grupo?.nome ?: "Grupo sem nome"
     val descricao = grupo?.descricao ?: "Sem descrição"
     val imagem = grupo?.imagem ?: ""
     val membros = grupo?.limite_membros ?: 0
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFEDEEFF))
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Header Voltar
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.Default.ArrowBack,
-                    contentDescription = "Voltar",
-                    tint = Color(0xFF341E9B
-                    ))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (carregandoDados) {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        } else if (erroMsg != null) {
-            Text(text = erroMsg ?: "Erro desconhecido", color = Color.Red)
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFE1E3FF)),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                // Informações do grupo
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Image(
-                        painter = if (imagem.isNotEmpty()) rememberAsyncImagePainter(imagem)
-                        else painterResource(id = R.drawable.logoclaro),
-                        contentDescription = nome,
-                        modifier = Modifier.size(80.dp).padding(end = 12.dp),
-                        contentScale = ContentScale.Crop
-                    )
-
-                    Column {
-                        Text(text = nome, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color(0xFF1E1E1E))
-                        Text(text = "$membros membros", color = Color.Gray, fontSize = 15.sp)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(nome, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Voltar",
+                            tint = Color(0xFF341E9B)
+                        )
                     }
                 }
+            )
+        }
+    ) { padding ->
 
-                Spacer(modifier = Modifier.height(24.dp))
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-                Text(text = "Descrição:", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF341E9B))
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(120.dp)
-                        .background(Color(0xFFD6D3F9), shape = RoundedCornerShape(8.dp))
-                        .padding(8.dp)
-                ) {
-                    Text(text = descricao, color = Color(0xFF1E1E1E), fontSize = 15.sp)
-                }
+            if (carregandoDados) {
+                Spacer(modifier = Modifier.height(40.dp))
+                CircularProgressIndicator()
+                return@Column
+            }
 
-                Spacer(modifier = Modifier.height(24.dp))
+            if (erroMsg != null) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(erroMsg!!, color = Color.Red, fontSize = 18.sp)
+                return@Column
+            }
 
-                // Botão Participar
-                Button(
-                    onClick = {
-                        val idGrupo = grupo?.id_grupo
-                        if (idGrupo == null) {
-                            Toast.makeText(context, "Grupo inválido", Toast.LENGTH_SHORT).show()
-                            return@Button
-                        }
-
-                        scope.launch {
-                            carregando = true
-                            try {
-                                // 🔍 Verifica se o usuário já participa ou criou o grupo
-                                val (jaParticipa, criouGrupo) = withContext(Dispatchers.IO) {
-                                    var participa = false
-                                    var criou = false
-
-                                    try {
-                                        val respParticipa = RetrofitInstance.grupoService
-                                            .listarGruposParticipando(idUsuario)
-                                            .execute()
-                                        if (respParticipa.isSuccessful) {
-                                            val grupos = respParticipa.body()?.grupos ?: emptyList()
-                                            participa = grupos.any { it.id_grupo == idGrupo }
-                                        }
-
-                                        val respCriou = RetrofitInstance.grupoService
-                                            .listarGruposCriados(idUsuario)
-                                            .execute()
-                                        if (respCriou.isSuccessful) {
-                                            val grupos = respCriou.body()?.grupos ?: emptyList()
-                                            criou = grupos.any { it.id_grupo == idGrupo }
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("GrupoInfo", "Erro ao verificar participação/criação: ${e.localizedMessage}")
-                                    }
-
-                                    Pair(participa, criou)
-                                }
-
-                                if (jaParticipa || criouGrupo) {
-                                    Log.d("GrupoInfo", "✅ Usuário já participa ou criou o grupo")
-                                    navController.navigate("home_grupo/${grupoId}/${idUsuario}")
-                                    return@launch
-                                }
-
-                                // 🟣 Caso contrário, faz o POST para participar
-                                Log.d("GrupoInfo", "➡️ POST grupo ${grupo!!.id_grupo} com id_usuario=$idUsuario")
-                                val response = withContext(Dispatchers.IO) {
-                                    RetrofitInstance.grupoService
-                                        .participarDoGrupo(grupo!!.id_grupo, mapOf("id_usuario" to idUsuario))
-                                        .execute()
-                                }
-
-                                Log.d("GrupoInfo", "⬅️ HTTP: ${response.code()}")
-                                if (response.isSuccessful && (response.body()?.status == true || response.code() in 200..299)) {
-                                    participando = true
-                                    Toast.makeText(context, "Você agora participa do grupo!", Toast.LENGTH_SHORT).show()
-                                    navController.navigate("home_grupo/${grupoId}/${idUsuario}")
-                                } else {
-                                    Toast.makeText(context, "Erro ao entrar no grupo", Toast.LENGTH_SHORT).show()
-                                }
-
-                            } catch (e: Exception) {
-                                Log.e("GrupoInfo", "❌ Erro: ${e.localizedMessage}", e)
-                                Toast.makeText(context, "Erro: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                            } finally {
-                                carregando = false
-                            }
-                        }
-                    },
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F2FF)),
+                elevation = CardDefaults.cardElevation(6.dp)
+            ) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    enabled = !carregando,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (participando) Color(0xFF4CAF50) else Color(0xFF6750A4)
-                    )
+                        .padding(20.dp)
                 ) {
-                    Text(
-                        when {
-                            carregando -> "Entrando..."
-                            participando -> "Participando"
-                            else -> "Participar"
-                        },
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color.White
-                    )
-                }
 
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+
+                        Image(
+                            painter =
+                                if (imagem.isNotEmpty()) rememberAsyncImagePainter(imagem)
+                                else painterResource(id = R.drawable.logoclaro),
+                            contentDescription = nome,
+                            modifier = Modifier
+                                .size(90.dp)
+                                .background(Color(0xFFE0DFFF), RoundedCornerShape(16.dp))
+                                .padding(6.dp),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column {
+                            Text(
+                                text = nome,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1E1E1E)
+                            )
+                            Text(
+                                text = "$membros membros",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    Text(
+                        text = "Descrição",
+                        fontSize = 18.sp,
+                        color = Color(0xFF341E9B),
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFDDD9FF), RoundedCornerShape(12.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(descricao, fontSize = 16.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(28.dp))
+
+                    // Botão participar
+                    Button(
+                        onClick = {
+                            val idGrupo = grupo?.id_grupo ?: return@Button
+
+                            scope.launch {
+                                carregando = true
+
+                                try {
+                                    val (jaParticipa, criouGrupo) = withContext(Dispatchers.IO) {
+                                        val participaList = RetrofitInstance.grupoService
+                                            .listarGruposParticipando(idUsuario)
+                                            .execute()
+                                            .body()?.grupos ?: emptyList()
+
+                                        val criaList = RetrofitInstance.grupoService
+                                            .listarGruposCriados(idUsuario)
+                                            .execute()
+                                            .body()?.grupos ?: emptyList()
+
+                                        Pair(
+                                            participaList.any { it.id_grupo == idGrupo },
+                                            criaList.any { it.id_grupo == idGrupo }
+                                        )
+                                    }
+
+                                    if (jaParticipa || criouGrupo) {
+                                        navController.navigate("home_grupo/$grupoId/$idUsuario")
+                                        return@launch
+                                    }
+
+                                    val resp = withContext(Dispatchers.IO) {
+                                        RetrofitInstance.grupoService.participarDoGrupo(
+                                            idGrupo,
+                                            mapOf("id_usuario" to idUsuario)
+                                        ).execute()
+                                    }
+
+                                    if (resp.isSuccessful) {
+                                        participando = true
+                                        Toast.makeText(context, "Agora você participa do grupo!", Toast.LENGTH_SHORT).show()
+                                        navController.navigate("home_grupo/$grupoId/$idUsuario")
+                                    } else {
+                                        Toast.makeText(context, "Erro ao participar", Toast.LENGTH_SHORT).show()
+                                    }
+
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Erro: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                } finally {
+                                    carregando = false
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (participando) Color(0xFF4CAF50) else Color(0xFF4A39C7)
+                        ),
+                        enabled = !carregando
+                    ) {
+                        Text(
+                            text = when {
+                                carregando -> "Entrando..."
+                                participando -> "Participando"
+                                else -> "Participar"
+                            },
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color.White
+                        )
+                    }
+                }
             }
         }
     }
 }
+
 
 
 @Preview(showSystemUi = true)

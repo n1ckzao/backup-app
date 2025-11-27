@@ -52,8 +52,8 @@ fun EditarInfo(
     var email by remember { mutableStateOf(usuario.email) }
     var dataNascimento by remember { mutableStateOf(usuario.data_nascimento?.take(10) ?: "") }
     var descricao by remember { mutableStateOf(usuario.descricao ?: "") }
-    var senha by remember { mutableStateOf("") } // não mostra senha criptografada
     var tipoUsuario by remember { mutableStateOf(usuario.tipo_usuario) }
+    var senha by remember { mutableStateOf("") } // não mostra senha criptografada
     var imagemUri by remember { mutableStateOf<Uri?>(null) }
     var imagemUrl by remember { mutableStateOf(usuario.foto_perfil ?: "") }
     var enviando by remember { mutableStateOf(false) }
@@ -72,9 +72,9 @@ fun EditarInfo(
                     val url = AzureUploader.uploadImageToAzure(inputStream, fileName)
                     if (url != null) {
                         imagemUrl = url
-                        Toast.makeText(context, "Imagem atualizada com sucesso!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Imagem atualizada!", Toast.LENGTH_SHORT).show()
                     } else {
-                        Toast.makeText(context, "Falha no upload da imagem", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Falha no upload", Toast.LENGTH_SHORT).show()
                     }
                 }
                 enviando = false
@@ -90,216 +90,153 @@ fun EditarInfo(
         unfocusedBorderColor = Color.Gray,
         focusedLabelColor = Color.White,
         unfocusedLabelColor = Color.Gray,
-        unfocusedContainerColor = Color.Transparent,
-        focusedContainerColor = Color.Transparent
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent
     )
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(PrimaryPurple)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp)
     ) {
-        Text(
-            "Editar Perfil",
-            fontWeight = FontWeight.Bold,
-            fontSize = 22.sp,
-            color = Color.White
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Card com imagem e nome
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = PurpleDarker)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
         ) {
-            Column(
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Editar Perfil", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Avatar com borda e clique
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .size(140.dp)
+                    .clip(CircleShape)
+                    .background(PurpleLighter)
+                    .clickable { launcher.launch("image/*") },
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .clickable { launcher.launch("image/*") },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (imagemUrl.isNotBlank()) {
-                        Image(
-                            painter = rememberAsyncImagePainter(imagemUrl),
-                            contentDescription = "Foto de perfil",
-                            modifier = Modifier.fillMaxSize().clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(PurpleLighter),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = nome.firstOrNull()?.toString() ?: "?",
-                                fontSize = 36.sp,
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                if (imagemUrl.isNotBlank()) {
+                    Image(
+                        painter = rememberAsyncImagePainter(imagemUrl),
+                        contentDescription = "Avatar",
+                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text = nome.firstOrNull()?.toString() ?: "?",
+                        fontSize = 48.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Toque para alterar a foto", color = Color.Gray, fontSize = 14.sp)
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Card principal com TextFields
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = PurpleDarker),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(8.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+
+                    OutlinedTextField(
+                        value = nome,
+                        onValueChange = { nome = it },
+                        label = { Text("Nome completo") },
+                        shape = RoundedCornerShape(50),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = outlinedColors
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        shape = RoundedCornerShape(50),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = outlinedColors
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = dataNascimento,
+                        onValueChange = { dataNascimento = it.take(10).replace(Regex("[^0-9-]"), "") },
+                        label = { Text("Data de Nascimento (AAAA-MM-DD)") },
+                        shape = RoundedCornerShape(50),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = outlinedColors
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = descricao,
+                        onValueChange = { descricao = it },
+                        label = { Text("Descrição") },
+                        shape = RoundedCornerShape(50),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = outlinedColors
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = tipoUsuario,
+                        onValueChange = { tipoUsuario = it },
+                        label = { Text("Tipo de Usuário") },
+                        shape = RoundedCornerShape(50),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = outlinedColors
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Button(
+                        onClick = {
+                            // salvar alterações
+                        },
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PurpleLighter),
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        Text("Salvar alterações", color = Color(0xFF341E9B), fontWeight = FontWeight.Bold)
                     }
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("Toque para alterar a foto", color = Color.Gray, fontSize = 14.sp)
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = nome,
-                    onValueChange = { nome = it },
-                    label = { Text("Nome completo") },
-                    shape = RoundedCornerShape(33.dp),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = outlinedColors
-                )
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = PurpleDarker)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    shape = RoundedCornerShape(33.dp),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = outlinedColors
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = dataNascimento,
-                    onValueChange = {
-                        // mantém formato AAAA-MM-DD
-                        dataNascimento = it.take(10).replace(Regex("[^0-9-]"), "")
-                    },
-                    label = { Text("Data de Nascimento (AAAA-MM-DD)") },
-                    shape = RoundedCornerShape(33.dp),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = outlinedColors
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = descricao,
-                    onValueChange = { descricao = it },
-                    label = { Text("Descrição") },
-                    shape = RoundedCornerShape(33.dp),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = outlinedColors
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = tipoUsuario,
-                    onValueChange = { tipoUsuario = it },
-                    label = { Text("Tipo de Usuário") },
-                    shape = RoundedCornerShape(33.dp),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = outlinedColors
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        val userId = usuario.id_usuario
-                        if (userId == null) {
-                            Toast.makeText(context, "ID de usuário inválido", Toast.LENGTH_SHORT).show()
-                            return@Button
-                        }
-
-                        val usuarioAtualizado = usuario.copy(
-                            nome_completo = nome,
-                            email = email,
-                            data_nascimento = dataNascimento,
-                            descricao = descricao,
-                            tipo_usuario = tipoUsuario,
-                            foto_perfil = imagemUrl,
-                            senha = if (senha.isNotBlank()) senha else usuario.senha
-                        )
-
-                        scope.launch {
-                            try {
-                                RetrofitInstance.usuarioService
-                                    .atualizarUsuarioPorId(userId, usuarioAtualizado)
-                                    .enqueue(object : Callback<Usuario> {
-
-                                        override fun onResponse(call: Call<Usuario>, response: Response<Usuario>) {
-                                            if (response.isSuccessful) {
-
-                                                onSave(usuarioAtualizado)
-
-                                                val gson = Gson()
-                                                val usuarioJson = gson.toJson(usuarioAtualizado)
-
-                                                navController.previousBackStackEntry
-                                                    ?.savedStateHandle
-                                                    ?.set("usuarioAtualizado", usuarioJson)
-
-
-                                                navController.popBackStack()
-
-                                            } else {
-                                                val errorBody = response.errorBody()?.string()
-                                                Toast.makeText(context, "Erro ${response.code()}: $errorBody", Toast.LENGTH_LONG).show()
-                                            }
-                                        }
-
-                                        override fun onFailure(call: Call<Usuario>, t: Throwable) {
-                                            Toast.makeText(context, "Falha: ${t.message}", Toast.LENGTH_SHORT).show()
-                                        }
-                                    })
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Erro inesperado: ${e.message}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PurpleLighter)
-                ) {
-                    Text("Salvar alterações", color = Color(0xFF341E9B))
-                }
-
+        // Overlay de carregamento
+        if (enviando) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0x80000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
             }
-        }
-    }
-
-    if (enviando) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0x80000000)),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = Color.White)
         }
     }
 }
+
 
 @Composable
 fun EditarInfoWrapper(navController: NavController, idUsuario: Int?) {
