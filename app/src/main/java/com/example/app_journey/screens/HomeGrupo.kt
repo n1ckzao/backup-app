@@ -26,7 +26,13 @@ import kotlinx.coroutines.withContext
 import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.rememberNavController
+import androidx.compose.material3.TopAppBar
 
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeGrupo(
     navController: NavHostController,
@@ -44,14 +50,9 @@ fun HomeGrupo(
             }
             if (response.isSuccessful) {
                 val wrapper = response.body()
-                if (wrapper != null && wrapper.grupo.isNotEmpty()) {
-                    grupo = wrapper.grupo[0]
-                } else {
-                    erroMsg = "Grupo não encontrado"
-                }
-            } else {
-                erroMsg = "Erro: ${response.code()}"
-            }
+                grupo = wrapper?.grupo?.firstOrNull()
+                    ?: run { erroMsg = "Grupo não encontrado"; null }
+            } else erroMsg = "Erro: ${response.code()}"
         } catch (e: Exception) {
             erroMsg = "Erro: ${e.localizedMessage}"
         } finally {
@@ -59,72 +60,118 @@ fun HomeGrupo(
         }
     }
 
-
     val nome = grupo?.nome ?: "Grupo"
     val descricao = grupo?.descricao ?: "Sem descrição"
     val imagem = grupo?.imagem ?: ""
     val membros = grupo?.limite_membros ?: 0
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFEDEEFF))
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.Default.ArrowBack,
-                    contentDescription = "Voltar",
-                    tint = Color(0xFF341E9B
-                    ))
-            }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(nome, fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Voltar",
+                            tint = Color(0xFF341E9B)
+                        )
+                    }
+                }
+            )
         }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-        Spacer(modifier = Modifier.height(16.dp))
+            if (carregandoDados) {
+                Spacer(modifier = Modifier.height(50.dp))
+                CircularProgressIndicator()
+                return@Column
+            }
 
-        if (carregandoDados) {
-            CircularProgressIndicator()
-        } else if (erroMsg != null) {
-            Text(text = erroMsg ?: "Erro", color = Color.Red)
-        } else {
+            if (erroMsg != null) {
+                Text(text = erroMsg!!, color = Color.Red, fontSize = 18.sp)
+                return@Column
+            }
+
+            // Card Principal
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFE1E3FF)),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F2FF)),
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp)
+                ) {
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = if (imagem.isNotEmpty()) rememberAsyncImagePainter(imagem)
                             else painterResource(id = R.drawable.logoclaro),
                             contentDescription = nome,
-                            modifier = Modifier.size(80.dp).padding(end = 12.dp),
+                            modifier = Modifier
+                                .size(90.dp)
+                                .background(
+                                    Color(0xFFE0DFFF),
+                                    RoundedCornerShape(16.dp)
+                                )
+                                .padding(6.dp),
                             contentScale = ContentScale.Crop
                         )
 
+                        Spacer(modifier = Modifier.width(16.dp))
+
                         Column {
-                            Text(text = nome, fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                            Text(text = "$membros membros", color = Color.Gray, fontSize = 15.sp)
+                            Text(
+                                text = nome,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1E1E1E)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "$membros membros",
+                                fontSize = 16.sp,
+                                color = Color.Gray
+                            )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
 
-                    Text("Descrição:", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF341E9B))
+                    Text(
+                        "Descrição do grupo",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF341E9B)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.dp)
-                            .background(Color(0xFFD6D3F9), RoundedCornerShape(8.dp))
-                            .padding(8.dp)
+                            .background(Color(0xFFDDD9FF), RoundedCornerShape(12.dp))
+                            .padding(12.dp)
                     ) {
-                        Text(text = descricao, color = Color(0xFF1E1E1E))
+                        Text(text = descricao, fontSize = 16.sp)
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
 
+                    // BOTÕES
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -133,28 +180,38 @@ fun HomeGrupo(
                             onClick = { navController.navigate("chat_grupo/${grupoId}") },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF341E9B))
+                                .height(50.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A39C7))
                         ) {
-                            Text("Chat", color = Color.White, fontSize = 16.sp)
+                            Text("Chat", color = Color.White, fontSize = 17.sp)
                         }
-                        Spacer(modifier = Modifier.width(4.dp))
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
                         Button(
                             onClick = {
                                 navController.navigate("calendario/${grupo?.id_grupo}/${idUsuario}")
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF341E9B))
+                                .height(50.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A39C7))
                         ) {
-                            Text("Calendário", color = Color.White, fontSize = 16.sp)
+                            Text("Calendário", color = Color.White, fontSize = 17.sp)
                         }
                     }
                 }
             }
         }
     }
+}
+
+
+@Preview
+@Composable
+private fun Preview() {
+    val fakeNav = rememberNavController()
+    HomeGrupo(navController = fakeNav, idUsuario = 1, grupoId = 1)
 }

@@ -1,6 +1,8 @@
 package com.example.app_journey.screens
 
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,6 +31,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.*
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarioPessoal(
@@ -44,14 +47,10 @@ fun CalendarioPessoal(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // 🔹 Carregar todos os eventos dos grupos do usuário
+    // 🔹 Carregar eventos
     LaunchedEffect(Unit) {
-        val service = RetrofitInstance.calendarioService
-        service.getTodosEventos().enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
-            override fun onResponse(
-                call: retrofit2.Call<CalendarioResponseWrapper>,
-                response: retrofit2.Response<CalendarioResponseWrapper>
-            ) {
+        RetrofitInstance.calendarioService.getTodosEventos().enqueue(object : retrofit2.Callback<CalendarioResponseWrapper> {
+            override fun onResponse(call: retrofit2.Call<CalendarioResponseWrapper>, response: retrofit2.Response<CalendarioResponseWrapper>) {
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.status == true && body.Calendario != null) {
@@ -59,15 +58,7 @@ fun CalendarioPessoal(
                             try {
                                 val data = LocalDate.parse(item.data_evento.substring(0, 10))
                                 val hora = item.data_evento.substring(11, 16)
-                                Evento(
-                                    id = item.id_calendario,
-                                    data = data,
-                                    nome = item.nome_evento,
-                                    descricao = item.descricao,
-                                    hora = hora,
-                                    link = item.link,
-                                    grupoId = item.id_grupo
-                                )
+                                Evento(item.id_calendario, data, item.nome_evento, item.descricao, hora, item.link, item.id_grupo)
                             } catch (e: Exception) { null }
                         }
                     }
@@ -75,14 +66,13 @@ fun CalendarioPessoal(
                     Toast.makeText(context, "Erro ao carregar eventos", Toast.LENGTH_SHORT).show()
                 }
             }
-
             override fun onFailure(call: retrofit2.Call<CalendarioResponseWrapper>, t: Throwable) {
                 Toast.makeText(context, "Erro: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
     }
 
-    // 🔹 Lógica de mês e dias do calendário
+    // 🔹 Dias do calendário
     val primeiroDiaDoMes = mesAtual.atDay(1)
     val diaSemanaInicio = primeiroDiaDoMes.dayOfWeek.value % 7
     val diasNoMes = mesAtual.lengthOfMonth()
@@ -92,28 +82,29 @@ fun CalendarioPessoal(
     }
 
     // 🔹 UI
-    Box {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFEDEEFF))
-                .padding(16.dp)
-        ) {
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F5FF))) {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+
             // Cabeçalho do mês
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { mesAtual = mesAtual.minusMonths(1) }) { Text("<") }
+                IconButton(onClick = { mesAtual = mesAtual.minusMonths(1) }) {
+                    Text("<", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                }
                 Text(
                     text = "${mesAtual.month.getDisplayName(TextStyle.FULL, Locale("pt", "BR")).replaceFirstChar { it.uppercase() }} ${mesAtual.year}",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
                 )
-                IconButton(onClick = { mesAtual = mesAtual.plusMonths(1) }) { Text(">") }
+                IconButton(onClick = { mesAtual = mesAtual.plusMonths(1) }) {
+                    Text(">", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Dias da semana
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -145,19 +136,24 @@ fun CalendarioPessoal(
                                     dataSelecionada = dia
                                     coroutineScope.launch { sheetState.show() }
                                 },
+                            shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = if (eventosDoDia.isNotEmpty()) Color(0xFFDAD5FF) else Color(0xFFEDEEFF)
+                                containerColor = when {
+                                    dia == hoje -> Color(0xFF341E9B)
+                                    eventosDoDia.isNotEmpty() -> Color(0xFFDAD5FF)
+                                    else -> Color(0xFFEDEEFF)
+                                }
                             )
                         ) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(4.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                modifier = Modifier.fillMaxSize().padding(4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
                                     text = dia.dayOfMonth.toString(),
-                                    fontWeight = if (dia == hoje) FontWeight.Bold else FontWeight.Medium
+                                    fontWeight = if (dia == hoje) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (dia == hoje) Color.White else Color.Black
                                 )
                                 eventosDoDia.take(2).forEach { evento ->
                                     Text(evento.nome, style = MaterialTheme.typography.bodySmall, maxLines = 1)
@@ -171,39 +167,36 @@ fun CalendarioPessoal(
             }
         }
 
-        // 🔹 BottomSheet com detalhes dos eventos do dia
+        // 🔹 BottomSheet
         if (dataSelecionada != null) {
             ModalBottomSheet(
                 onDismissRequest = { dataSelecionada = null },
                 sheetState = sheetState
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                ) {
+                Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
                     Text(
                         text = "Eventos de ${dataSelecionada!!.dayOfMonth}/${dataSelecionada!!.monthValue}/${dataSelecionada!!.year}",
                         fontWeight = FontWeight.Bold,
-                        fontSize = MaterialTheme.typography.titleMedium.fontSize
+                        fontSize = 18.sp
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     val eventosDoDia = eventos.filter { it.data == dataSelecionada }
                     if (eventosDoDia.isEmpty()) {
                         Text("Nenhum evento", color = Color.Gray)
                     } else {
                         eventosDoDia.forEach { evento ->
-                            Column(modifier = Modifier.padding(vertical = 6.dp)) {
-                                Text("• ${evento.nome}", fontWeight = FontWeight.Bold)
-                                Text("Descrição: ${evento.descricao}", style = MaterialTheme.typography.bodySmall)
-                                if (!evento.hora.isNullOrBlank())
-                                    Text("Hora: ${evento.hora}", style = MaterialTheme.typography.bodySmall)
-                                if (evento.link.isNotBlank())
-                                    Text("Link: ${evento.link}", color = Color(0xFF341E9B))
-                                Text("Grupo ID: ${evento.grupoId}", color = Color.Gray, fontSize = 12.sp)
-                                Divider(color = Color.LightGray)
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F0FF))
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(evento.nome, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF341E9B))
+                                    if (evento.descricao.isNotBlank()) Text(evento.descricao, fontSize = 14.sp, color = Color.Black)
+                                    if (!evento.hora.isNullOrBlank()) Text("Hora: ${evento.hora}", fontSize = 12.sp, color = Color.Gray)
+                                    if (evento.link.isNotBlank()) Text("Link: ${evento.link}", fontSize = 12.sp, color = Color(0xFF341E9B))
+                                }
                             }
                         }
                     }
