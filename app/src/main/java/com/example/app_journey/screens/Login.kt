@@ -385,7 +385,7 @@ fun Login(navegacao: NavHostController?) {
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
                             cursorColor = Color.White,
-                            focusedBorderColor = Color(0xFFFFD700),
+                            focusedBorderColor = Color(0xFFFFFFFF),
                             unfocusedBorderColor = Color.Gray
                         )
                     )
@@ -405,7 +405,7 @@ fun Login(navegacao: NavHostController?) {
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White,
                             cursorColor = Color.White,
-                            focusedBorderColor = Color(0xFFFFD700),
+                            focusedBorderColor = Color(0xFFFFFFFF),
                             unfocusedBorderColor = Color.Gray
                         )
                     )
