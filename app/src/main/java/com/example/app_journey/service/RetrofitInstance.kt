@@ -1,6 +1,6 @@
 package com.example.app_journey.service
 
-import com.example.app_journey.network.ChatPrivadoService
+
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 

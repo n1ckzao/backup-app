@@ -269,4 +269,3 @@ fun PreviewGrupoInfo() {
     val fakeNav = androidx.navigation.compose.rememberNavController()
     GrupoInfo(navController = fakeNav, grupoId = 1)
 }
-
