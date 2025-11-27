@@ -72,7 +72,10 @@ fun ChatPrivadoScreen(
                 conteudo = data.getString("conteudo"),
                 enviado_em = data.optString("enviado_em"),
                 id_chat = data.getInt("id_chat"),
-                id_usuario = data.getInt("id_usuario")
+                id_usuario = data.getInt("id_usuario"),
+                id_chat_room = data.getInt("id_chat_room"),
+                nome_completo = data.getString("nome_completo"),
+                foto_perfil = data.getString("id_chat_room")
             )
 
             mensagens = mensagens + novaMensagem

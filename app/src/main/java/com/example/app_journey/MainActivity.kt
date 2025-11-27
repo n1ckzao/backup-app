@@ -1,4 +1,3 @@
-// MainActivity.kt
 package com.example.app_journey
 
 import android.content.Context
@@ -91,6 +90,7 @@ fun AppContent() {
     // Rotas que exibem AppBar + Drawer
     val rotasComBarra = listOf("profile", "home/{idUsuario}", "criar_grupo", "editar_info/{idUsuario}", "meus_grupos", "ebooks")
 
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -130,6 +130,7 @@ fun AppContent() {
                                             }
 
                                         }
+
                                 ) {
                                     Image(
                                         painter = painterResource(id = R.drawable.logoclaro),
@@ -267,6 +268,7 @@ fun AppContent() {
                     )
                 }
 
+
                 // Cadastro de e-book
                 composable("ebook_cadastrar") {
                     CadastrarEbookScreen(
@@ -299,7 +301,7 @@ fun AppContent() {
                         onVoltar = { navController.popBackStack() }
                     )
                 }
-                }
             }
         }
     }
+}
