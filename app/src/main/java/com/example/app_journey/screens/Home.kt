@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -94,7 +95,6 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
                         }
                     }
                 }
-
                 override fun onFailure(call: Call<GruposResult>, t: Throwable) {
                     Toast.makeText(context, "Erro ao carregar grupos", Toast.LENGTH_SHORT).show()
                 }
@@ -113,7 +113,6 @@ fun Home(navegacao: NavHostController, idUsuario: Int) {
                         }
                     }
                 }
-
                 override fun onFailure(call: Call<AreaResult>, t: Throwable) {
                     Toast.makeText(context, "Erro ao carregar categorias", Toast.LENGTH_SHORT).show()
                 }
@@ -344,6 +343,7 @@ private fun AnimatedGrupoCard(grupo: Grupo, onClick: () -> Unit) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Limite: ${grupo.limite_membros} membros", color = PrimaryPurple, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }
+
             }
         }
     }

@@ -46,33 +46,18 @@ fun MeusGrupos(navController: NavHostController) {
         scope.launch {
             loading = true
             try {
-                // Buscar grupos criados pelo usuário
                 val responseCriados = withContext(Dispatchers.IO) {
                     RetrofitInstance.grupoService.listarGruposDoUsuario(idUsuario).execute()
                 }
+                val gruposCriados = if (responseCriados.isSuccessful) responseCriados.body()?.grupos ?: emptyList() else emptyList()
 
-                val gruposCriados = if (responseCriados.isSuccessful) {
-                    responseCriados.body()?.grupos ?: emptyList()
-                } else emptyList()
-
-                // Buscar grupos que o usuário está participando
                 val responseParticipando = withContext(Dispatchers.IO) {
                     RetrofitInstance.grupoService.listarGruposParticipando(idUsuario).execute()
                 }
+                val gruposParticipando = if (responseParticipando.isSuccessful) responseParticipando.body()?.grupos ?: emptyList() else emptyList()
 
-                val gruposParticipando = if (responseParticipando.isSuccessful) {
-                    responseParticipando.body()?.grupos ?: emptyList()
-                } else emptyList()
-
-                // Unir e remover duplicados
                 grupos = (gruposCriados + gruposParticipando).distinctBy { it.id_grupo }
-
-                if (grupos.isEmpty()) {
-                    errorMessage = "Você ainda não participa de nenhum grupo."
-                } else {
-                    errorMessage = null
-                }
-
+                errorMessage = if (grupos.isEmpty()) "Você ainda não participa de nenhum grupo." else null
             } catch (e: Exception) {
                 Log.e("MeusGrupos", "Erro ao carregar grupos", e)
                 errorMessage = "Erro: ${e.localizedMessage ?: "desconhecido"}"
@@ -90,10 +75,15 @@ fun MeusGrupos(navController: NavHostController) {
                         Image(
                             painter = painterResource(id = R.drawable.logoclaro),
                             contentDescription = "Logo Journey",
-                            modifier = Modifier.fillMaxHeight()
+                            modifier = Modifier.height(40.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Meus Grupos", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Meus Grupos",
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF351D9B))
@@ -104,7 +94,7 @@ fun MeusGrupos(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFD9DCFC))
+                .background(Color(0xFFF0F2FF)) // fundo claro
         ) {
             when {
                 loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -115,19 +105,19 @@ fun MeusGrupos(navController: NavHostController) {
                 )
                 else -> LazyColumn(
                     contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(grupos) { grupo ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(100.dp)
+                                .height(110.dp)
                                 .clickable {
-                                    // 🟣 Ação ao clicar no grupo
                                     navController.navigate("grupoInfo/${grupo.id_grupo}")
                                 },
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF351D9B))
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(8.dp)
                         ) {
                             Row(
                                 modifier = Modifier
@@ -135,36 +125,44 @@ fun MeusGrupos(navController: NavHostController) {
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                if (!grupo.imagem.isNullOrBlank()) {
-                                    Image(
-                                        painter = rememberAsyncImagePainter(grupo.imagem),
-                                        contentDescription = grupo.nome,
-                                        modifier = Modifier
-                                            .size(64.dp)
-                                            .clip(RoundedCornerShape(12.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                } else {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.logo),
-                                        contentDescription = grupo.nome,
-                                        modifier = Modifier
-                                            .size(64.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                    )
+                                Box(
+                                    modifier = Modifier
+                                        .size(70.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(Color(0xFFE0E0FF)), // placeholder suave
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (!grupo.imagem.isNullOrBlank()) {
+                                        Image(
+                                            painter = rememberAsyncImagePainter(grupo.imagem),
+                                            contentDescription = grupo.nome,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Text(
+                                            text = grupo.nome.firstOrNull()?.toString() ?: "?",
+                                            fontSize = 28.sp,
+                                            color = Color(0xFF351D9B),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
 
                                 Spacer(modifier = Modifier.width(16.dp))
+
                                 Column {
                                     Text(
                                         grupo.nome,
-                                        color = Color.White,
-                                        fontSize = 18.sp,
+                                        color = Color(0xFF351D9B),
+                                        fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold
                                     )
+                                    Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         "${grupo.limite_membros} membros",
-                                        color = Color.White.copy(alpha = 0.8f)
+                                        color = Color(0xFF351D9B).copy(alpha = 0.6f),
+                                        fontSize = 14.sp
                                     )
                                 }
                             }

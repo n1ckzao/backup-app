@@ -10,17 +10,19 @@ object RetrofitInstance {
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    val usuarioService: UsuarioService = retrofit.create(UsuarioService::class.java)
+        val usuarioService: UsuarioService = retrofit.create(UsuarioService::class.java)
 
-    val grupoService: GrupoService = retrofit.create(GrupoService::class.java)
+        val grupoService: GrupoService = retrofit.create(GrupoService::class.java)
 
-    val calendarioService: CalendarioService by lazy {
-        retrofit.create(CalendarioService::class.java)
+        val calendarioService: CalendarioService by lazy {
+            retrofit.create(CalendarioService::class.java)
+        }
+        val mensagensService = retrofit.create(MensagensService::class.java)
+        val chatPrivadoService = retrofit.create(ChatPrivadoService::class.java)
+        val ebookService: EbookService by lazy {
+            retrofit.create(EbookService::class.java)
+        }
+
     }
-    val mensagensService = retrofit.create(MensagensService::class.java)
-    val chatPrivadoService = retrofit.create(ChatPrivadoService::class.java)
-    val ebookService: EbookService by lazy {
-        retrofit.create(EbookService::class.java)
-    }
 
-}
+

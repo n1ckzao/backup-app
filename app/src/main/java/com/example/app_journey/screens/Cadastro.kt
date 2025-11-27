@@ -37,7 +37,6 @@ fun Cadastro(navegacao: NavHostController) {
     val confirmarSenha = remember { mutableStateOf("") }
     val context = LocalContext.current
 
-    // 👉 Formata a data automaticamente no formato dd/MM/yyyy
     fun formatarDataExibicao(input: String): String {
         val digits = input.filter { it.isDigit() }
         return when {
@@ -48,16 +47,12 @@ fun Cadastro(navegacao: NavHostController) {
         }
     }
 
-    // 👉 Converte dd/MM/yyyy para yyyy-MM-dd (para enviar ao backend)
     fun formatarDataParaIso(data: String): String {
         return try {
             val partes = data.split("/")
-            val dia = partes[0]
-            val mes = partes[1]
-            val ano = partes[2]
-            "$ano-$mes-$dia"
+            "${partes[2]}-${partes[1]}-${partes[0]}"
         } catch (e: Exception) {
-            data // se der erro, envia como está
+            data
         }
     }
 
@@ -65,252 +60,173 @@ fun Cadastro(navegacao: NavHostController) {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(Color(0xff39249D), Color(0xff180D5B))
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFF39249D), Color(0xFF180D5B))
                 )
             )
+            .padding(16.dp)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Card(
                 modifier = Modifier
-                    .height(580.dp)
-                    .fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xff351D9B))
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF341E9B))
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(15.dp)
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-
                     Text(
                         "Crie sua conta",
-                        fontSize = 35.sp,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
 
                     Row(
-                        modifier = Modifier
-                            .height(60.dp)
-                            .fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Já tem uma conta?", fontSize = 18.sp, color = Color.White)
-                        Button(
-                            modifier = Modifier.height(45.dp),
-                            colors = ButtonDefaults.buttonColors(Color.Transparent),
-                            onClick = { navegacao.navigate(route = "login") }
-                        ) {
+                        Text("Já tem uma conta?", color = Color.White, fontSize = 16.sp)
+                        TextButton(onClick = { navegacao.navigate("login") }) {
                             Text(
                                 "Log in",
-                                fontSize = 18.sp,
-                                color = Color.White,
-                                fontWeight = FontWeight(1000)
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFFFFFF),
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
 
-                    Column(
+                    // Campos
+                    val camposModifier = Modifier
+                        .fillMaxWidth()
+                        .height(55.dp)
+
+                    @Composable
+                    fun outlinedColors() = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color.White,
+                        focusedBorderColor = Color(0xFFFFD700),
+                        unfocusedBorderColor = Color.Gray,
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color.Gray,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent
+                    )
+
+                    OutlinedTextField(
+                        value = nome_completo.value,
+                        onValueChange = { nome_completo.value = it },
+                        label = { Text("Nome", color = Color.White) },
+                        shape = RoundedCornerShape(33.dp),
+                        singleLine = true,
+                        modifier = camposModifier,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+                        colors = outlinedColors()
+                    )
+
+                    OutlinedTextField(
+                        value = dataNascimento.value,
+                        onValueChange = { input -> dataNascimento.value = formatarDataExibicao(input) },
+                        label = { Text("Data de Nascimento (dd/MM/aaaa)", color = Color.White) },
+                        shape = RoundedCornerShape(33.dp),
+                        singleLine = true,
+                        modifier = camposModifier,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                        colors = outlinedColors()
+                    )
+
+                    OutlinedTextField(
+                        value = email.value,
+                        onValueChange = { email.value = it },
+                        label = { Text("E-mail", color = Color.White) },
+                        shape = RoundedCornerShape(33.dp),
+                        singleLine = true,
+                        modifier = camposModifier,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                        colors = outlinedColors()
+                    )
+
+                    OutlinedTextField(
+                        value = senha.value,
+                        onValueChange = { senha.value = it },
+                        label = { Text("Senha", color = Color.White) },
+                        shape = RoundedCornerShape(33.dp),
+                        singleLine = true,
+                        modifier = camposModifier,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                        colors = outlinedColors()
+                    )
+
+                    OutlinedTextField(
+                        value = confirmarSenha.value,
+                        onValueChange = { confirmarSenha.value = it },
+                        label = { Text("Confirmar senha", color = Color.White) },
+                        shape = RoundedCornerShape(33.dp),
+                        singleLine = true,
+                        modifier = camposModifier,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        colors = outlinedColors()
+                    )
+
+                    // Botão Cadastrar
+                    Button(
+                        onClick = {
+                            if (nome_completo.value.isBlank() || email.value.isBlank() || senha.value.isBlank()) {
+                                Toast.makeText(context, "Preencha todos os campos obrigatórios", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+
+                            val dataIso = formatarDataParaIso(dataNascimento.value)
+
+                            val usuario = Usuario(
+                                nome_completo = nome_completo.value,
+                                data_nascimento = dataIso,
+                                email = email.value,
+                                senha = senha.value,
+                                tipo_usuario = "Estudante",
+                                foto_perfil = "",
+                                descricao = ""
+                            )
+
+                            RetrofitFactory().getUsuarioService().inserirUsuario(usuario)
+                                .enqueue(object : Callback<Usuario> {
+                                    override fun onResponse(call: Call<Usuario>, response: Response<Usuario>) {
+                                        if (response.isSuccessful) {
+                                            Toast.makeText(context, "Cadastro realizado com sucesso!", Toast.LENGTH_SHORT).show()
+                                            navegacao.navigate("login")
+                                        } else {
+                                            val erroMsg = response.errorBody()?.string()
+                                            Toast.makeText(context, "Erro: $erroMsg", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+
+                                    override fun onFailure(call: Call<Usuario>, t: Throwable) {
+                                        Toast.makeText(context, "Erro de rede.", Toast.LENGTH_LONG).show()
+                                    }
+                                })
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(350.dp),
-                        verticalArrangement = Arrangement.SpaceBetween
+                            .height(50.dp),
+                        shape = RoundedCornerShape(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFFFFF))
                     ) {
-                        // Nome
-                        OutlinedTextField(
-                            value = nome_completo.value,
-                            onValueChange = { nome_completo.value = it },
-                            label = { Text(text = "Nome", color = Color.White) },
-                            shape = RoundedCornerShape(33.dp),
-                            singleLine = true,
-                            modifier = Modifier
-                                .height(57.dp)
-                                .fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                cursorColor = Color.White,
-                                focusedBorderColor = Color.White,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedLabelColor = Color.White,
-                                unfocusedLabelColor = Color.Gray,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent
-                            )
-                        )
-
-                        // Data de nascimento (com máscara)
-                        OutlinedTextField(
-                            value = dataNascimento.value,
-                            onValueChange = { input ->
-                                dataNascimento.value = formatarDataExibicao(input)
-                            },
-                            label = { Text(text = "Data de Nascimento (dd/mm/aaaa)", color = Color.White) },
-                            shape = RoundedCornerShape(33.dp),
-                            singleLine = true,
-                            modifier = Modifier
-                                .height(57.dp)
-                                .fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Next
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                cursorColor = Color.White,
-                                focusedBorderColor = Color.White,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedLabelColor = Color.White,
-                                unfocusedLabelColor = Color.Gray,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent
-                            )
-                        )
-
-                        // Email
-                        OutlinedTextField(
-                            value = email.value,
-                            onValueChange = { email.value = it },
-                            label = { Text(text = "E-mail", color = Color.White) },
-                            shape = RoundedCornerShape(33.dp),
-                            singleLine = true,
-                            modifier = Modifier
-                                .height(57.dp)
-                                .fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Email,
-                                imeAction = ImeAction.Next
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                cursorColor = Color.White,
-                                focusedBorderColor = Color.White,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedLabelColor = Color.White,
-                                unfocusedLabelColor = Color.Gray,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent
-                            )
-                        )
-
-                        // Senhas
-                        OutlinedTextField(
-                            value = senha.value,
-                            onValueChange = { senha.value = it },
-                            label = { Text(text = "Senha", color = Color.White) },
-                            shape = RoundedCornerShape(33.dp),
-                            singleLine = true,
-                            modifier = Modifier.height(57.dp).fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Password,
-                                imeAction = ImeAction.Next
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                cursorColor = Color.White,
-                                focusedBorderColor = Color.White,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedLabelColor = Color.White,
-                                unfocusedLabelColor = Color.Gray,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent
-                            )
-                        )
-
-                        OutlinedTextField(
-                            value = confirmarSenha.value,
-                            onValueChange = { confirmarSenha.value = it },
-                            label = { Text(text = "Confirmar senha", color = Color.White) },
-                            shape = RoundedCornerShape(33.dp),
-                            singleLine = true,
-                            modifier = Modifier.height(57.dp).fillMaxWidth(),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Password,
-                                imeAction = ImeAction.Done
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                cursorColor = Color.White,
-                                focusedBorderColor = Color.White,
-                                unfocusedBorderColor = Color.Gray,
-                                focusedLabelColor = Color.White,
-                                unfocusedLabelColor = Color.Gray,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Button(
-                            onClick = {
-                                if (nome_completo.value.isBlank() || email.value.isBlank() || senha.value.isBlank()) {
-                                    Toast.makeText(context, "Preencha todos os campos obrigatórios", Toast.LENGTH_SHORT).show()
-                                    return@Button
-                                }
-
-                                val dataIso = formatarDataParaIso(dataNascimento.value)
-
-                                val usuario = Usuario(
-                                    nome_completo = nome_completo.value,
-                                    data_nascimento = dataIso,
-                                    email = email.value,
-                                    senha = senha.value,
-                                    tipo_usuario = "Estudante",
-                                    foto_perfil = "",
-                                    descricao = ""
-                                )
-
-                                Log.d("Cadastro", "Enviando usuário: $usuario")
-
-                                RetrofitFactory().getUsuarioService().inserirUsuario(usuario)
-                                    .enqueue(object : Callback<Usuario> {
-                                        override fun onResponse(call: Call<Usuario>, response: Response<Usuario>) {
-                                            if (response.isSuccessful) {
-                                                Toast.makeText(context, "Cadastro realizado com sucesso!", Toast.LENGTH_SHORT).show()
-                                                navegacao.navigate("login")
-                                            } else {
-                                                val erroMsg = response.errorBody()?.string()
-                                                Toast.makeText(context, "Erro ao cadastrar: $erroMsg", Toast.LENGTH_LONG).show()
-                                            }
-                                        }
-
-                                        override fun onFailure(call: Call<Usuario>, t: Throwable) {
-                                            Toast.makeText(context, "Erro na conexão com o servidor.", Toast.LENGTH_LONG).show()
-                                            Log.e("API", "Falha: ${t.message}")
-                                        }
-                                    })
-                            },
-                            shape = RoundedCornerShape(48.dp),
-                            modifier = Modifier
-                                .width(250.dp)
-                                .height(40.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White)
-                        ) {
-                            Text("Cadastrar", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xff341E9B))
-                        }
+                        Text("Cadastrar", color = Color(0xFF341E9B), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
             }
@@ -318,9 +234,10 @@ fun Cadastro(navegacao: NavHostController) {
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
-private fun CadastroPreview() {
+fun CadastroPreview() {
     val navController = rememberNavController()
     Cadastro(navegacao = navController)
 }
+
