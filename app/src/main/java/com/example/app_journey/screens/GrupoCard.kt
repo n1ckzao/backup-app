@@ -18,9 +18,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.app_journey.model.Grupo
 
@@ -83,4 +85,11 @@ fun GrupoCard(grupo: Grupo, onClick: () -> Unit) {
             }
         }
     }
+}
+
+
+@Preview
+@Composable
+private fun HomePrev() {
+    val fakeNav = rememberNavController()
 }
