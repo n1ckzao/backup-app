@@ -60,7 +60,8 @@ fun GrupoInfo(
                 val response = RetrofitInstance.grupoService.getGrupoById(grupoId).execute()
                 if (response.isSuccessful) {
                     val wrapper = response.body()
-                    grupo = wrapper?.grupo?.firstOrNull()
+                    grupo = wrapper?.grupo
+
                 } else {
                     erroMsg = "Erro ao carregar grupo: ${response.code()}"
                 }

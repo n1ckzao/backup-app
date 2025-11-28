@@ -47,16 +47,24 @@ fun MeusGrupos(navController: NavHostController) {
             loading = true
             try {
                 val responseCriados = withContext(Dispatchers.IO) {
-                    RetrofitInstance.grupoService.listarGruposDoUsuario(idUsuario).execute()
+                    RetrofitInstance.grupoService.listarGruposCriados(idUsuario).execute()
                 }
-                val gruposCriados = if (responseCriados.isSuccessful) responseCriados.body()?.grupos ?: emptyList() else emptyList()
+                val gruposCriados = if (responseCriados.isSuccessful)
+                    responseCriados.body()?.grupos ?: emptyList()
+                else
+                    emptyList()
 
                 val responseParticipando = withContext(Dispatchers.IO) {
                     RetrofitInstance.grupoService.listarGruposParticipando(idUsuario).execute()
                 }
-                val gruposParticipando = if (responseParticipando.isSuccessful) responseParticipando.body()?.grupos ?: emptyList() else emptyList()
+                val gruposParticipando = if (responseParticipando.isSuccessful)
+                    responseParticipando.body()?.grupos ?: emptyList()
+                else
+                    emptyList()
 
                 grupos = (gruposCriados + gruposParticipando).distinctBy { it.id_grupo }
+
+
                 errorMessage = if (grupos.isEmpty()) "Você ainda não participa de nenhum grupo." else null
             } catch (e: Exception) {
                 Log.e("MeusGrupos", "Erro ao carregar grupos", e)
@@ -94,15 +102,17 @@ fun MeusGrupos(navController: NavHostController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF0F2FF)) // fundo claro
+                .background(Color(0xFFF0F2FF))
         ) {
             when {
                 loading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+
                 errorMessage != null -> Text(
                     text = errorMessage!!,
                     color = Color.Red,
                     modifier = Modifier.align(Alignment.Center)
                 )
+
                 else -> LazyColumn(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -113,7 +123,8 @@ fun MeusGrupos(navController: NavHostController) {
                                 .fillMaxWidth()
                                 .height(110.dp)
                                 .clickable {
-                                    navController.navigate("grupoInfo/${grupo.id_grupo}")
+                                    // ROTA CORRETA (tudo minúsculo)
+                                    navController.navigate("grupoinfo/${grupo.id_grupo}")
                                 },
                             shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -125,11 +136,12 @@ fun MeusGrupos(navController: NavHostController) {
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+
                                 Box(
                                     modifier = Modifier
                                         .size(70.dp)
                                         .clip(RoundedCornerShape(16.dp))
-                                        .background(Color(0xFFE0E0FF)), // placeholder suave
+                                        .background(Color(0xFFE0E0FF)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (!grupo.imagem.isNullOrBlank()) {

@@ -50,8 +50,9 @@ fun HomeGrupo(
             }
             if (response.isSuccessful) {
                 val wrapper = response.body()
-                grupo = wrapper?.grupo?.firstOrNull()
+                grupo = wrapper?.grupo
                     ?: run { erroMsg = "Grupo não encontrado"; null }
+
             } else erroMsg = "Erro: ${response.code()}"
         } catch (e: Exception) {
             erroMsg = "Erro: ${e.localizedMessage}"

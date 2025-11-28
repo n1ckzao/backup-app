@@ -218,19 +218,19 @@ fun AppContent() {
 
                     ChatPrivadoScreen(
                         navController = navController,
-                        chatRoomId = chatId,
-                        nomeOutroUsuario = nome,
-                        idUsuarioAtual = idUsuario
+                        idChatRoom = chatId,
+                        idUsuario = idUsuario,
+                        nomeOutroUsuario = nome
                     )
                 }
+
 
 
                 composable("chat_grupo/{grupoId}") { backStackEntry ->
                     val grupoId = backStackEntry.arguments?.getString("grupoId")?.toIntOrNull() ?: 0
 
                     val context = LocalContext.current
-                    val sharedPreferences = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
-                    val idUsuarioAtual = sharedPreferences.getInt("idUsuario", 0)
+                    val idUsuarioAtual = SharedPrefHelper.recuperarIdUsuario(context) ?: -1
 
                     ChatGrupo(
                         navController = navController,
@@ -238,6 +238,7 @@ fun AppContent() {
                         idUsuarioAtual = idUsuarioAtual
                     )
                 }
+
 
 
                 composable("verificar_email/{email}") { backStackEntry ->
